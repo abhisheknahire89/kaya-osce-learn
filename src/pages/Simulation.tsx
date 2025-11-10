@@ -19,7 +19,7 @@ import {
   EyeOff,
   CheckCircle2
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
 import sampleCase from "@/data/sample-case.json";
@@ -51,6 +51,7 @@ const SUGGESTED_PROMPTS = [
 
 const Simulation = () => {
   const { id: assignmentId } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   
   // Load case data (in real app, fetch from assignment)
@@ -214,12 +215,34 @@ const Simulation = () => {
       run_id: runId,
     });
     
-    toast({
-      title: "Simulation completed",
-      description: "Calculating your score...",
-    });
-    
-    // In real app: call submit_run edge function and navigate to debrief
+    try {
+      const { data, error } = await supabase.functions.invoke("submit_run", {
+        body: {
+          run_id: runId,
+          student_id: "student-demo",
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Simulation completed",
+        description: "Calculating your score...",
+      });
+
+      // Navigate to debrief after short delay
+      setTimeout(() => {
+        navigate(`/debrief/${runId}`);
+      }, 1500);
+    } catch (error) {
+      console.error("Submit error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit. Please try again.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
   };
 
   return (

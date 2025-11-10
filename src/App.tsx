@@ -11,6 +11,7 @@ import FacultyDashboard from "./pages/FacultyDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import GenerateCase from "./pages/GenerateCase";
 import Simulation from "./pages/Simulation";
+import Debrief from "./pages/Debrief";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="student">
                   <Simulation />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/debrief/:runId" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <Debrief />
                 </ProtectedRoute>
               } 
             />

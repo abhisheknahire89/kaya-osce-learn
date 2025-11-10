@@ -57,9 +57,35 @@ export const CasePreviewModal = ({
                   <CardTitle className="text-lg">Case Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed">
-                    {previewText}
-                  </pre>
+                  <div className="text-sm leading-relaxed space-y-4">
+                    {previewText.split('\n\n').map((paragraph, idx) => {
+                      // Check if it's a heading (starts with ##)
+                      if (paragraph.startsWith('## ')) {
+                        return (
+                          <h3 key={idx} className="font-semibold text-base mt-4 mb-2">
+                            {paragraph.replace('## ', '')}
+                          </h3>
+                        );
+                      }
+                      // Check if it's a list item (starts with -)
+                      if (paragraph.startsWith('- ')) {
+                        const items = paragraph.split('\n').filter(line => line.trim());
+                        return (
+                          <ul key={idx} className="list-disc list-inside space-y-1 ml-2">
+                            {items.map((item, i) => (
+                              <li key={i}>{item.replace('- ', '')}</li>
+                            ))}
+                          </ul>
+                        );
+                      }
+                      // Regular paragraph
+                      return paragraph.trim() ? (
+                        <p key={idx} className="text-foreground">
+                          {paragraph}
+                        </p>
+                      ) : null;
+                    })}
+                  </div>
                 </CardContent>
               </Card>
             )}

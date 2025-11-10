@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { PlayCircle, BookOpen, Award, TrendingUp, Clock, Target, BookMarked } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StudentHeader } from "@/components/student/StudentHeader";
+import { StudentOnboarding } from "@/components/student/StudentOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -26,12 +27,40 @@ const StudentDashboard = () => {
   const [competencyMap, setCompetencyMap] = useState<Record<string, { score: number; count: number }>>({});
   const [remediation, setRemediation] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     if (user) {
+      checkOnboardingStatus();
       fetchDashboardData();
     }
   }, [user]);
+
+  const checkOnboardingStatus = async () => {
+    if (!user) return;
+
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('metadata')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      // Check if student has selected a cohort
+      const metadata = profile?.metadata as any;
+      const hasCohort = metadata?.cohort_id;
+      
+      if (!hasCohort) {
+        setNeedsOnboarding(true);
+        setShowOnboarding(true);
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -179,6 +208,15 @@ const StudentDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <StudentHeader />
+
+      {/* Student Onboarding Modal */}
+      {showOnboarding && needsOnboarding && (
+        <StudentOnboarding
+          isOpen={showOnboarding}
+          userId={user?.id || ""}
+          userName={user?.user_metadata?.name || "Student"}
+        />
+      )}
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Progress Overview */}

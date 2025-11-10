@@ -260,59 +260,95 @@ export const CasePreviewModal = ({
               </CardContent>
             </Card>
 
-            {/* Correct Diagnosis */}
-            {caseData?.rubric && (() => {
-              const diagnosisSection = caseData.rubric.find((section: any) => 
-                section.section.toLowerCase().includes('diagnosis')
+            {/* Diagnosis MCQ Options */}
+            {caseData?.mcqs && (() => {
+              const diagnosisMcqs = caseData.mcqs.filter((mcq: any) => 
+                mcq.stem?.toLowerCase().includes('diagnosis') || 
+                mcq.stem?.toLowerCase().includes('diagnose') ||
+                mcq.stem?.toLowerCase().includes('most likely')
               );
-              if (!diagnosisSection?.items?.length) return null;
+              if (!diagnosisMcqs.length) return null;
               
               return (
                 <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-900">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Check className="h-5 w-5 text-green-600" />
-                      Correct Diagnosis
+                      Diagnosis Options
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {diagnosisSection.items.map((item: any, idx: number) => (
-                        <li key={idx} className="text-sm flex items-start gap-2">
-                          <span className="text-green-600 mt-1">•</span>
-                          <span>{item.text}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <CardContent className="space-y-4">
+                    {diagnosisMcqs.map((mcq: any, idx: number) => (
+                      <div key={idx} className="space-y-2">
+                        <p className="font-medium text-sm">{mcq.stem}</p>
+                        <div className="ml-4 space-y-1.5">
+                          {mcq.choices?.map((choice: string, choiceIdx: number) => (
+                            <div 
+                              key={choiceIdx} 
+                              className={`text-sm flex items-center gap-2 p-2 rounded ${
+                                choiceIdx === mcq.correctIndex 
+                                  ? "bg-green-100 dark:bg-green-900/30 font-medium" 
+                                  : ""
+                              }`}
+                            >
+                              {choiceIdx === mcq.correctIndex && (
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                              )}
+                              <span>
+                                {String.fromCharCode(65 + choiceIdx)}. {choice}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               );
             })()}
 
-            {/* Correct Management Plan */}
-            {caseData?.rubric && (() => {
-              const managementSection = caseData.rubric.find((section: any) => 
-                section.section.toLowerCase().includes('management')
+            {/* Management Plan MCQ Options */}
+            {caseData?.mcqs && (() => {
+              const managementMcqs = caseData.mcqs.filter((mcq: any) => 
+                mcq.stem?.toLowerCase().includes('management') || 
+                mcq.stem?.toLowerCase().includes('treatment') ||
+                mcq.stem?.toLowerCase().includes('therapy')
               );
-              if (!managementSection?.items?.length) return null;
+              if (!managementMcqs.length) return null;
               
               return (
                 <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Check className="h-5 w-5 text-blue-600" />
-                      Correct Management Plan
+                      Management Plan Options
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {managementSection.items.map((item: any, idx: number) => (
-                        <li key={idx} className="text-sm flex items-start gap-2">
-                          <span className="text-blue-600 mt-1">•</span>
-                          <span>{item.text}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <CardContent className="space-y-4">
+                    {managementMcqs.map((mcq: any, idx: number) => (
+                      <div key={idx} className="space-y-2">
+                        <p className="font-medium text-sm">{mcq.stem}</p>
+                        <div className="ml-4 space-y-1.5">
+                          {mcq.choices?.map((choice: string, choiceIdx: number) => (
+                            <div 
+                              key={choiceIdx} 
+                              className={`text-sm flex items-center gap-2 p-2 rounded ${
+                                choiceIdx === mcq.correctIndex 
+                                  ? "bg-blue-100 dark:bg-blue-900/30 font-medium" 
+                                  : ""
+                              }`}
+                            >
+                              {choiceIdx === mcq.correctIndex && (
+                                <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                              )}
+                              <span>
+                                {String.fromCharCode(65 + choiceIdx)}. {choice}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               );

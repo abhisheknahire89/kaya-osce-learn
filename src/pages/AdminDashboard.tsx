@@ -34,43 +34,51 @@ const AdminDashboard = () => {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      // Fetch all scored runs with student and case info
+      // Fetch all scored runs
       const { data: allRuns, error: runsError } = await supabase
         .from("simulation_runs")
-        .select(`
-          id,
-          student_id,
-          score_json,
-          created_at,
-          status,
-          profiles!simulation_runs_student_id_fkey (
-            id,
-            name
-          )
-        `)
+        .select("id, student_id, score_json, created_at, status")
         .eq("status", "scored");
 
       if (runsError) throw runsError;
 
+      // Fetch all student profiles
+      const studentIds = [...new Set(allRuns?.map(r => r.student_id) || [])];
+      const { data: studentProfiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", studentIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of student profiles
+      const profileMap = new Map(studentProfiles?.map(p => [p.id, p]) || []);
+
+      // Enrich runs with profile data
+      const enrichedRuns = allRuns?.map(run => ({
+        ...run,
+        profiles: profileMap.get(run.student_id)
+      })) || [];
+
       // Calculate stats
-      const uniqueStudents = new Set(allRuns?.map(r => r.student_id) || []);
-      const scores = allRuns?.map(r => (r.score_json as any)?.percent || 0).filter(s => s > 0) || [];
+      const uniqueStudents = new Set(enrichedRuns.map(r => r.student_id));
+      const scores = enrichedRuns.map(r => (r.score_json as any)?.percent || 0).filter(s => s > 0);
       const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
       setStats({
         totalStudents: uniqueStudents.size,
-        activeAssessments: allRuns?.length || 0,
+        activeAssessments: enrichedRuns.length,
         avgScore: Math.round(avgScore),
         completionRate: 75, // Placeholder
       });
 
       // Build daily leaderboard
-      const dailyRuns = allRuns?.filter(r => new Date(r.created_at) >= todayStart) || [];
+      const dailyRuns = enrichedRuns.filter(r => new Date(r.created_at) >= todayStart);
       const dailyByStudent = buildLeaderboard(dailyRuns);
       setDailyLeaderboard(dailyByStudent);
 
       // Build weekly leaderboard
-      const weeklyRuns = allRuns?.filter(r => new Date(r.created_at) >= weekStart) || [];
+      const weeklyRuns = enrichedRuns.filter(r => new Date(r.created_at) >= weekStart);
       const weeklyByStudent = buildLeaderboard(weeklyRuns);
       setWeeklyLeaderboard(weeklyByStudent);
     } catch (error: any) {
@@ -96,11 +104,14 @@ const AdminDashboard = () => {
       if (!studentMap[studentId]) {
         studentMap[studentId] = { name: studentName, scores: [], count: 0 };
       }
-      studentMap[studentId].scores.push(score);
+      if (score > 0) {
+        studentMap[studentId].scores.push(score);
+      }
       studentMap[studentId].count += 1;
     });
 
     const leaderboard = Object.entries(studentMap)
+      .filter(([_, data]) => data.scores.length > 0)
       .map(([studentId, data]) => ({
         studentId,
         name: data.name,

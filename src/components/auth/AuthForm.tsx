@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,26 @@ export const AuthForm = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<"faculty" | "student" | "admin">("student");
+  const [cohortId, setCohortId] = useState<string>("");
+  const [cohorts, setCohorts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchCohorts();
+  }, []);
+
+  const fetchCohorts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cohorts')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setCohorts(data || []);
+    } catch (error) {
+      console.error('Error fetching cohorts:', error);
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,6 +44,17 @@ export const AuthForm = () => {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
+
+    // Validate cohort for students
+    if (role === "student" && !cohortId) {
+      toast({
+        title: "Cohort required",
+        description: "Please select your cohort",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -40,13 +71,19 @@ export const AuthForm = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Create profile
+        // Create profile with cohort metadata for students
+        const profileData: any = {
+          id: data.user.id,
+          name,
+        };
+
+        if (role === "student" && cohortId) {
+          profileData.metadata = { cohort_id: cohortId };
+        }
+
         const { error: profileError } = await supabase
           .from("profiles")
-          .insert({
-            id: data.user.id,
-            name,
-          });
+          .insert(profileData);
 
         if (profileError) throw profileError;
 
@@ -266,6 +303,23 @@ export const AuthForm = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {role === "student" && (
+                <div className="space-y-2">
+                  <Label htmlFor="cohort">Cohort / समूह</Label>
+                  <Select value={cohortId} onValueChange={setCohortId}>
+                    <SelectTrigger id="cohort" className="rounded-xl">
+                      <SelectValue placeholder="Select your cohort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cohorts.map((cohort) => (
+                        <SelectItem key={cohort.id} value={cohort.id}>
+                          {cohort.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Button
                 type="submit"
                 disabled={isLoading}

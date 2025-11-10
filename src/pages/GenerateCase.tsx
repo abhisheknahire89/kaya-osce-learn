@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, ArrowLeft, Eye, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import kayaLogo from "@/assets/kaya-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const SUBJECTS = [
   "Kayachikitsa",
@@ -40,6 +42,7 @@ const DOSHAS = ["Vata", "Pitta", "Kapha"];
 
 const GenerateCase = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [subject, setSubject] = useState("");
   const [sloIds, setSloIds] = useState("");
   const [millerLevel, setMillerLevel] = useState("");
@@ -61,25 +64,74 @@ const GenerateCase = () => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to generate cases",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     
-    // Simulate API call - replace with actual edge function call
-    setTimeout(() => {
-      const mockCase = {
-        id: `case-${Date.now()}`,
-        title: `${subject} Clinical Case`,
+    try {
+      // Parse SLO IDs from comma-separated string
+      const sloIdArray = sloIds.split(",").map(s => s.trim()).filter(s => s);
+      
+      // Determine difficulty level
+      const difficultyLevel = difficulty[0] < 33 ? "Easy" : difficulty[0] < 67 ? "Medium" : "Hard";
+      
+      // Prepare payload
+      const payload = {
         subject,
+        sloIds: sloIdArray,
         millerLevel,
         bloomDomain,
+        difficulty: difficultyLevel,
         durationMinutes: duration[0],
+        faculty_id: user.id,
+        ayurvedicContext: {
+          doshaFocus: selectedDoshas.length > 0 ? selectedDoshas : undefined,
+          specialModality: specialModality || undefined,
+        },
       };
-      setGeneratedCase(mockCase);
-      setIsGenerating(false);
+
+      console.log("Calling generate_case with payload:", payload);
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke("generate_case", {
+        body: payload,
+      });
+
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (!data.success || !data.case) {
+        throw new Error("Failed to generate case");
+      }
+
+      setGeneratedCase(data.case);
       toast({
         title: "Case generated successfully",
         description: "Review and approve to publish",
       });
-    }, 3000);
+    } catch (error: any) {
+      console.error("Error generating case:", error);
+      toast({
+        title: "Generation failed",
+        description: error.message || "Failed to generate case. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const getDifficultyLabel = () => {
@@ -249,7 +301,7 @@ const GenerateCase = () => {
               {isGenerating ? (
                 <>
                   <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
-                  Generating case with Aivana AI...
+                  Generating case with Veda AI...
                 </>
               ) : (
                 <>

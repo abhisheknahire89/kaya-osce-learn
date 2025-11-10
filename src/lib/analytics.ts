@@ -5,6 +5,7 @@ export type AnalyticsEvent =
   | "student_message"
   | "action_order_labs"
   | "action_order_exam"
+  | "action_physical_exam"
   | "action_request_nadi"
   | "run_submit"
   | "run_scored"
@@ -79,6 +80,9 @@ export const logAnalyticsEvent = async (payload: AnalyticsPayload) => {
     return { success: false, error };
   }
 };
+
+// Alias for convenience
+export const trackEvent = logAnalyticsEvent;
 
 /**
  * Generate a request ID for tracking related events

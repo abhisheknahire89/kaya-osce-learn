@@ -124,7 +124,6 @@ export const AuthForm = () => {
         
         if (insertError) {
           console.error("Role insert error:", insertError);
-          // Continue anyway, we'll handle missing role on the dashboard
         }
 
         // Also create profile if it doesn't exist
@@ -277,7 +276,7 @@ export const AuthForm = () => {
                     Creating account...
                   </>
                 ) : (
-                  "Create Account"
+                  "Sign Up"
                 )}
               </Button>
             </form>

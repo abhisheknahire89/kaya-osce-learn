@@ -12,7 +12,6 @@ const AdminAnalytics = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d');
-  const [cohorts, setCohorts] = useState<any[]>([]);
   const [selectedCohort, setSelectedCohort] = useState<string>('all');
   const [analytics, setAnalytics] = useState({
     performanceBySubject: [] as any[],
@@ -22,28 +21,8 @@ const AdminAnalytics = () => {
   });
 
   useEffect(() => {
-    fetchCohorts();
-  }, []);
-
-  useEffect(() => {
-    if (cohorts.length > 0 || selectedCohort === 'all') {
-      fetchAnalytics();
-    }
-  }, [period, selectedCohort, cohorts]);
-
-  const fetchCohorts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cohorts')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setCohorts(data || []);
-    } catch (error: any) {
-      console.error('Error fetching cohorts:', error);
-    }
-  };
+    fetchAnalytics();
+  }, [period, selectedCohort]);
 
   const fetchAnalytics = async () => {
     try {
@@ -243,19 +222,6 @@ const AdminAnalytics = () => {
               <SelectItem value="7d">Last 7 days</SelectItem>
               <SelectItem value="30d">Last 30 days</SelectItem>
               <SelectItem value="90d">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedCohort} onValueChange={setSelectedCohort}>
-            <SelectTrigger className="w-[200px] rounded-xl">
-              <Users className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="All cohorts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All cohorts</SelectItem>
-              {cohorts.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
             </SelectContent>
           </Select>
         </div>

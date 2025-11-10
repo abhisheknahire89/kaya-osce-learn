@@ -14,7 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
 import { LoadingWithFacts } from "@/components/faculty/LoadingWithFacts";
-import { AssignCohortModal } from "@/components/faculty/AssignCohortModal";
 
 const SUBJECTS = [
   "Kayachikitsa",
@@ -144,6 +143,7 @@ const GenerateCase = () => {
 
       setGeneratedCase(data.case);
       setPreviewText(data.previewText || "");
+      setShowPreview(true); // Auto-open preview modal
       toast({
         title: "Case generated successfully",
         description: "Review and approve to publish",
@@ -185,8 +185,8 @@ const GenerateCase = () => {
         description: "Now assign it to a cohort",
       });
 
-      // Show assign button in preview modal
-      setShowPreview(true);
+      // Auto-open assign modal after approval
+      handleOpenAssignModal();
     } catch (error: any) {
       console.error("Error approving case:", error);
       toast({
@@ -441,16 +441,6 @@ const GenerateCase = () => {
         isApproving={isApproving}
         showAssignButton={!!approvedCaseId}
       />
-
-      {/* Assign Modal */}
-      {approvedCaseId && (
-        <AssignCohortModal
-          isOpen={showAssignModal}
-          onClose={() => setShowAssignModal(false)}
-          caseId={approvedCaseId}
-          onAssignComplete={handleAssignComplete}
-        />
-      )}
       </div>
     </>
   );

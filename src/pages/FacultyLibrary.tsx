@@ -8,12 +8,16 @@ import { DashboardHeader } from "@/components/faculty/DashboardHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
 
 const FacultyLibrary = () => {
   const { toast } = useToast();
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   useEffect(() => {
     fetchCases();
@@ -98,11 +102,27 @@ const FacultyLibrary = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 rounded-xl">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 rounded-xl"
+                      onClick={() => {
+                        setSelectedCase(c);
+                        setShowPreviewModal(true);
+                      }}
+                    >
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                    <Button variant="ghost" size="sm" className="rounded-xl">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="rounded-xl"
+                      onClick={() => {
+                        setSelectedCase(c);
+                        setShowAssignModal(true);
+                      }}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                   </div>
@@ -111,6 +131,25 @@ const FacultyLibrary = () => {
             ))
           )}
         </div>
+
+        {/* Modals */}
+        {selectedCase && (
+          <>
+            <CasePreviewModal
+              isOpen={showPreviewModal}
+              onClose={() => {
+                setShowPreviewModal(false);
+                setSelectedCase(null);
+              }}
+              caseData={selectedCase.clinical_json}
+              onApprove={() => {
+                setShowPreviewModal(false);
+                setSelectedCase(null);
+              }}
+              showAssignButton={true}
+            />
+          </>
+        )}
       </div>
     </div>
   );

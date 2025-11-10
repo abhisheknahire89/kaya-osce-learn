@@ -4,31 +4,22 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { PlayCircle, BookOpen, Award, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import kayaLogo from "@/assets/kaya-logo.png";
+import { StudentHeader } from "@/components/student/StudentHeader";
 
 const StudentDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <img src={kayaLogo} alt="Kaya Logo" className="h-10 w-auto" />
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Student Dashboard</h1>
-              <p className="text-xs text-muted-foreground">Student Name • Roll: 2024001</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm">Profile</Button>
-        </div>
-      </header>
+      <StudentHeader />
 
       <div className="container mx-auto px-4 py-8">
         {/* Progress Overview */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-2xl font-bold text-foreground">Your Progress</h2>
+        <div className="mb-8 animate-fade-in">
+          <h2 className="mb-4 text-2xl font-bold text-foreground">
+            Your Progress
+            <span className="ml-2 text-sm text-muted-foreground" lang="hi">आपकी प्रगति</span>
+          </h2>
           <div className="grid gap-4 md:grid-cols-3">
-            <Card>
+            <Card className="rounded-2xl border-primary/20 hover-scale">
               <CardHeader className="pb-3">
                 <CardDescription>Overall Completion</CardDescription>
                 <CardTitle className="text-3xl">65%</CardTitle>
@@ -37,7 +28,7 @@ const StudentDashboard = () => {
                 <Progress value={65} className="h-2" />
               </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-2xl border-primary/20 hover-scale">
               <CardHeader className="pb-3">
                 <CardDescription>Average Score</CardDescription>
                 <CardTitle className="text-3xl">82%</CardTitle>
@@ -46,7 +37,7 @@ const StudentDashboard = () => {
                 <Progress value={82} className="h-2" />
               </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-2xl border-primary/20 hover-scale">
               <CardHeader className="pb-3">
                 <CardDescription>Assessments Completed</CardDescription>
                 <CardTitle className="text-3xl">12/18</CardTitle>
@@ -59,18 +50,18 @@ const StudentDashboard = () => {
         </div>
 
         {/* Available Assessments */}
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
           <h2 className="mb-4 text-2xl font-bold text-foreground">Available Assessments</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {[1, 2].map((i) => (
-              <Card key={i} className="hover:shadow-md transition-shadow">
+              <Card key={i} className="hover:shadow-md transition-shadow rounded-2xl border-primary/10">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-lg">Virtual OSCE {i}</CardTitle>
                       <CardDescription>Ayurvedic Clinical Assessment</CardDescription>
                     </div>
-                    <Badge>Available</Badge>
+                    <Badge className="rounded-full bg-accent text-accent-foreground">Available</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -81,9 +72,9 @@ const StudentDashboard = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Award className="h-4 w-4" />
-                      <span>Miller Level: Does (L4)</span>
+                      <span>Miller Level: ShowsHow (L3)</span>
                     </div>
-                    <Button asChild className="w-full">
+                    <Button asChild className="w-full rounded-2xl bg-gradient-to-r from-primary to-[#7AA86E]">
                       <Link to="/student/assessment">
                         <PlayCircle className="mr-2 h-4 w-4" />
                         Start Assessment
@@ -97,15 +88,15 @@ const StudentDashboard = () => {
         </div>
 
         {/* Recent Results */}
-        <div>
+        <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
           <h2 className="mb-4 text-2xl font-bold text-foreground">Recent Results</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { title: "Case 1: Chronic Pain", score: 85, status: "Pass" },
+              { title: "Case 1: Pittaja Jwara", score: 85, status: "Pass" },
               { title: "Case 2: Digestive Issues", score: 78, status: "Pass" },
               { title: "Case 3: Respiratory", score: 92, status: "Pass" }
             ].map((result, i) => (
-              <Card key={i}>
+              <Card key={i} className="rounded-2xl border-primary/10">
                 <CardHeader>
                   <CardTitle className="text-base">{result.title}</CardTitle>
                   <CardDescription>Completed 2 days ago</CardDescription>
@@ -114,11 +105,11 @@ const StudentDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-2xl font-bold">{result.score}%</p>
-                      <Badge variant="outline" className="mt-1">{result.status}</Badge>
+                      <Badge variant="outline" className="mt-1 rounded-full">{result.status}</Badge>
                     </div>
                     <TrendingUp className="h-8 w-8 text-success" />
                   </div>
-                  <Button variant="outline" size="sm" className="mt-3 w-full">
+                  <Button variant="outline" size="sm" className="mt-3 w-full rounded-xl">
                     View Feedback
                   </Button>
                 </CardContent>

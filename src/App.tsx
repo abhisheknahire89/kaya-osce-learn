@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import FacultyDashboard from "./pages/FacultyDashboard";
@@ -22,10 +23,38 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/faculty" element={<FacultyDashboard />} />
-          <Route path="/faculty/generate-case" element={<GenerateCase />} />
-          <Route path="/student" element={<StudentDashboard />} />
-          <Route path="/student/assessment" element={<Simulation />} />
+          <Route 
+            path="/faculty" 
+            element={
+              <ProtectedRoute requiredRole="faculty">
+                <FacultyDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/faculty/generate-case" 
+            element={
+              <ProtectedRoute requiredRole="faculty">
+                <GenerateCase />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student" 
+            element={
+              <ProtectedRoute requiredRole="student">
+                <StudentDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/assessment" 
+            element={
+              <ProtectedRoute requiredRole="student">
+                <Simulation />
+              </ProtectedRoute>
+            } 
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

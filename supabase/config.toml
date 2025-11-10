@@ -1,11 +1,1 @@
-[functions.generate_case]
-verify_jwt = true
-
-[functions.student_message]
-verify_jwt = true
-
-[functions.start_simulation]
-verify_jwt = true
-
-[functions.score_case]
-verify_jwt = true
+project_id = "dhnxndhkbvasvpmvzetx"

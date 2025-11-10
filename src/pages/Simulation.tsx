@@ -548,7 +548,7 @@ const Simulation = () => {
                         <p className="text-sm font-medium">
                           {test.name.replace(/_/g, " ")}
                         </p>
-                        {showLabResults && (
+                        {showLabResults && test.ordered && (
                           <p className="text-xs text-muted-foreground mt-1">{test.result}</p>
                         )}
                       </div>

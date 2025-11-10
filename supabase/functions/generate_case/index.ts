@@ -115,7 +115,16 @@ serve(async (req) => {
 
 CRITICAL: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks or backticks. Do NOT add any explanatory text before or after the JSON.
 
-Use English for clinical text. Add Devanagari headings where specified. Include source references to uploaded PDFs by file-id placeholders (e.g., [file-HEB-NCISM-CBDC]).`;
+Use English for clinical text. Add Devanagari headings where specified. 
+
+IMPORTANT CITATION RULES:
+1. For RUBRIC items (case reasoning, clinical assessment): Include evidence-based citations from the reference PDF at /public/references/References_Books_Resources.pdf. Use format: [file-REFERENCE-NAME] where REFERENCE-NAME matches a book from the PDF (e.g., [file-CHARAKA-SAMHITA], [file-BHAVAPRAKASHA], [file-KAYACHIKITSA-TEXTBOOK]).
+2. For MCQ rationales: Do NOT include citations. Keep them concise and educational without references.
+3. Rubric items must cite authoritative Ayurvedic texts to justify clinical reasoning and assessment criteria.
+
+Examples:
+- Rubric item: "Correctly identifies Kapha-Vata imbalance as primary pathology [file-CHARAKA-SAMHITA]"
+- MCQ rationale: "This presentation indicates Tamaka Shwasa due to episodic dyspnoea and wheezing, classically aggravated by cold."`;
 
     const userPrompt = `Create a ClinicalCase JSON object with these parameters:
 - subject: ${params.subject}

@@ -72,9 +72,13 @@ serve(async (req) => {
     console.log('Generating case with params:', params);
 
     // Build Gemini prompt
-    const systemPrompt = `SYSTEM: You are "Kaya Case Generator", an evidence-aware clinical case author for Ayurvedic undergraduate training aligned to NCISM CBDC. Output ONLY valid JSON matching the ClinicalCase schema. Use English for clinical text. Add Devanagari headings where specified. Include source references to uploaded PDFs by file-id placeholders (e.g., [file-HEB-NCISM-CBDC]). Do not add extra commentary.`;
+    const systemPrompt = `You are "Kaya Case Generator", an evidence-aware clinical case author for Ayurvedic undergraduate training aligned to NCISM CBDC. 
 
-    const userPrompt = `Create a ClinicalCase with these parameters:
+CRITICAL: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks or backticks. Do NOT add any explanatory text before or after the JSON.
+
+Use English for clinical text. Add Devanagari headings where specified. Include source references to uploaded PDFs by file-id placeholders (e.g., [file-HEB-NCISM-CBDC]).`;
+
+    const userPrompt = `Create a ClinicalCase JSON object with these parameters:
 - subject: ${params.subject}
 - sloIds: ${params.sloIds.join(", ")}
 - millerLevel: ${params.millerLevel}
@@ -86,7 +90,57 @@ ${params.ayurvedicContext?.specialModality ? `- specialModality: ${params.ayurve
 - tone: "Ayurvedic clinical, calm, mentor-like"
 - localContext: "India, outpatient primary care"
 
-Return: valid ClinicalCase JSON with all required fields including id (UUID), title, slug, patient details, stem, vitals, script (history, onRequestExam, labsOnOrder, dynamicTriggers), rubric sections with items, and 3 MCQs.`;
+Required JSON structure:
+{
+  "id": "uuid-string",
+  "title": "descriptive title",
+  "slug": "url-friendly-slug",
+  "subject": "${params.subject}",
+  "competencyIds": ["array of competency IDs"],
+  "sloIds": ${JSON.stringify(params.sloIds)},
+  "millerLevel": "${params.millerLevel}",
+  "bloomDomain": "${params.bloomDomain}",
+  "durationMinutes": ${params.durationMinutes},
+  "patient": {
+    "name": "patient name",
+    "age": number,
+    "gender": "M/F/Other",
+    "language_preference": "English"
+  },
+  "stem": "clinical scenario description",
+  "vitals": { "key": "value" pairs },
+  "script": {
+    "history": { "question": "response" pairs },
+    "onRequestExam": { "exam": "findings" pairs },
+    "labsOnOrder": { "test": "result" pairs },
+    "dynamicTriggers": { "trigger": ["responses"] }
+  },
+  "rubric": [
+    {
+      "section": "section name",
+      "max": number,
+      "items": [
+        { "id": "item-id", "text": "criteria", "weight": number }
+      ]
+    }
+  ],
+  "mcqs": [
+    {
+      "id": "mcq-id",
+      "stem": "question",
+      "choices": ["option1", "option2", "option3", "option4"],
+      "correctIndex": 0,
+      "rationale": "explanation",
+      "sloId": "slo-id"
+    }
+  ],
+  "metadata": {
+    "createdAt": "ISO date string",
+    "createdBy": "ai-generator"
+  }
+}
+
+Output ONLY the JSON object, no markdown formatting.`;
 
     let attempts = 0;
     let generatedCase = null;
@@ -136,12 +190,32 @@ Return: valid ClinicalCase JSON with all required fields including id (UUID), ti
         throw new Error('No text generated from Gemini');
       }
 
-      // Extract JSON from markdown code blocks if present
-      let jsonText = generatedText;
-      const jsonMatch = generatedText.match(/```json\n([\s\S]*?)\n```/);
+      console.log('Raw generated text (first 200 chars):', generatedText.substring(0, 200));
+
+      // Extract JSON from markdown code blocks - try multiple patterns
+      let jsonText = generatedText.trim();
+      
+      // Try pattern 1: ```json\n...\n```
+      let jsonMatch = jsonText.match(/```json\s*\n([\s\S]*?)\n```/);
       if (jsonMatch) {
         jsonText = jsonMatch[1];
+        console.log('Extracted with pattern 1 (```json)');
+      } else {
+        // Try pattern 2: ```\n...\n```
+        jsonMatch = jsonText.match(/```\s*\n([\s\S]*?)\n```/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[1];
+          console.log('Extracted with pattern 2 (```)');
+        } else {
+          // Try pattern 3: Remove any leading/trailing backticks
+          jsonText = jsonText.replace(/^```(?:json)?\s*\n?/g, '').replace(/\n?```\s*$/g, '');
+          console.log('Cleaned up with pattern 3 (remove backticks)');
+        }
       }
+
+      // Final cleanup: trim whitespace
+      jsonText = jsonText.trim();
+      console.log('Final JSON text (first 200 chars):', jsonText.substring(0, 200));
 
       try {
         const caseJson = JSON.parse(jsonText);
@@ -150,6 +224,7 @@ Return: valid ClinicalCase JSON with all required fields including id (UUID), ti
         console.log('Case validated successfully');
       } catch (validationError) {
         console.error('Validation error:', validationError);
+        console.error('Failed JSON text (first 500 chars):', jsonText.substring(0, 500));
         if (attempts < maxAttempts) {
           console.log('Retrying with fix instructions...');
           // For retry, add validation error details to prompt

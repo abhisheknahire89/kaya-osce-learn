@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import FacultyDashboard from "./pages/FacultyDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLeaderboard from "./pages/AdminLeaderboard";
 import GenerateCase from "./pages/GenerateCase";
 import Simulation from "./pages/Simulation";
 import DiagnosisSelection from "./pages/DiagnosisSelection";
@@ -58,6 +59,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/leaderboard" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLeaderboard />
                 </ProtectedRoute>
               } 
             />

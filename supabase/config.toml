@@ -26,3 +26,12 @@ verify_jwt = false
 
 [functions.submit_management]
 verify_jwt = false
+
+[functions.generate_leaderboard_snapshot]
+verify_jwt = false
+
+[functions.admin_leaderboard]
+verify_jwt = true
+
+[functions.admin_leaderboard_export]
+verify_jwt = true

@@ -14,7 +14,7 @@ export const AuthForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [role, setRole] = useState<"faculty" | "student">("student");
+  const [role, setRole] = useState<"faculty" | "student" | "admin">("student");
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,7 +66,13 @@ export const AuthForm = () => {
         });
 
         // Navigate based on role
-        navigate(role === "faculty" ? "/faculty" : "/student");
+        if (role === "admin") {
+          navigate("/admin");
+        } else if (role === "faculty") {
+          navigate("/faculty");
+        } else {
+          navigate("/student");
+        }
       }
     } catch (error: any) {
       toast({
@@ -141,7 +147,13 @@ export const AuthForm = () => {
 
       // Navigate based on role (with fallback to user metadata)
       const userRole = roleData?.role || data.user.user_metadata?.role || "student";
-      navigate(userRole === "faculty" ? "/faculty" : "/student");
+      if (userRole === "admin") {
+        navigate("/admin");
+      } else if (userRole === "faculty") {
+        navigate("/faculty");
+      } else {
+        navigate("/student");
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -250,6 +262,7 @@ export const AuthForm = () => {
                   <SelectContent>
                     <SelectItem value="student">Student / शिक्षार्थी</SelectItem>
                     <SelectItem value="faculty">Faculty / चिकित्सक</SelectItem>
+                    <SelectItem value="admin">Admin / प्रशासक</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

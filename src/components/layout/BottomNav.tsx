@@ -1,4 +1,4 @@
-import { Home, Clipboard, PlusCircle, BarChart3, User, Users } from "lucide-react";
+import { Home, Clipboard, PlusCircle, BarChart3, User, Users, Trophy } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +21,7 @@ const facultyNavItems = [
 
 const adminNavItems = [
   { key: "home", label: "Dashboard", icon: Home, route: "/admin" },
-  { key: "students", label: "Students", icon: Users, route: "/admin/students" },
+  { key: "leaderboard", label: "Leaderboard", icon: Trophy, route: "/admin/leaderboard" },
   { key: "cases", label: "Cases", icon: Clipboard, route: "/faculty" },
   { key: "analytics", label: "Analytics", icon: BarChart3, route: "/admin/analytics" },
   { key: "profile", label: "Profile", icon: User, route: "/admin/profile" },

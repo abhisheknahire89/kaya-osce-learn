@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_exports: {
+        Row: {
+          admin_id: string
+          created_at: string
+          file_url: string | null
+          format: string
+          id: string
+          params_json: Json
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          file_url?: string | null
+          format: string
+          id?: string
+          params_json: Json
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          file_url?: string | null
+          format?: string
+          id?: string
+          params_json?: Json
+        }
+        Relationships: []
+      }
       analytics_snapshots: {
         Row: {
           cohort_id: string | null
@@ -221,6 +248,41 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      leaderboard_snapshots: {
+        Row: {
+          cohort_id: string | null
+          created_at: string
+          id: string
+          metrics: Json
+          period: string
+          snapshot_date: string
+        }
+        Insert: {
+          cohort_id?: string | null
+          created_at?: string
+          id?: string
+          metrics?: Json
+          period: string
+          snapshot_date: string
+        }
+        Update: {
+          cohort_id?: string | null
+          created_at?: string
+          id?: string
+          metrics?: Json
+          period?: string
+          snapshot_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_snapshots_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mcqs: {
         Row: {

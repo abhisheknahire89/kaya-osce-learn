@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
 import { LoadingWithFacts } from "@/components/faculty/LoadingWithFacts";
+import { AssignmentModal } from "@/components/faculty/AssignmentModal";
 
 const SUBJECTS = [
   "Kayachikitsa",
@@ -61,6 +62,7 @@ const GenerateCase = () => {
   const [isApproving, setIsApproving] = useState(false);
   const [approvedCaseId, setApprovedCaseId] = useState<string | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [deadline, setDeadline] = useState("");
 
   const handleGenerate = async () => {
     if (!subject || !sloIds || !millerLevel || !bloomDomain) {
@@ -182,11 +184,12 @@ const GenerateCase = () => {
       
       toast({
         title: "Case approved successfully",
-        description: "Now assign it to a cohort",
+        description: "Now assign it to students",
       });
 
-      // Auto-open assign modal after approval
-      handleOpenAssignModal();
+      // Close preview and open assign modal
+      setShowPreview(false);
+      setShowAssignModal(true);
     } catch (error: any) {
       console.error("Error approving case:", error);
       toast({
@@ -199,15 +202,11 @@ const GenerateCase = () => {
     }
   };
 
-  const handleOpenAssignModal = () => {
-    setShowPreview(false);
-    setShowAssignModal(true);
-  };
-
   const handleAssignComplete = () => {
     setShowAssignModal(false);
     setGeneratedCase(null);
     setApprovedCaseId(null);
+    setDeadline("");
     navigate("/faculty");
   };
 
@@ -392,6 +391,11 @@ const GenerateCase = () => {
               )}
             </Button>
 
+            {/* Note about assignment */}
+            <p className="text-xs text-center text-muted-foreground">
+              After generation, you'll review and assign the case to students with a deadline
+            </p>
+
             {/* Preview Generated Case */}
             {generatedCase && (
               <Card className="rounded-xl border-secondary bg-accent/5">
@@ -437,10 +441,19 @@ const GenerateCase = () => {
         caseData={generatedCase}
         previewText={previewText}
         onApprove={handleApprove}
-        onAssign={handleOpenAssignModal}
         isApproving={isApproving}
-        showAssignButton={!!approvedCaseId}
+        showAssignButton={false}
       />
+
+      {/* Assignment Modal */}
+      {showAssignModal && approvedCaseId && (
+        <AssignmentModal
+          isOpen={showAssignModal}
+          onClose={() => setShowAssignModal(false)}
+          caseId={approvedCaseId}
+          onSuccess={handleAssignComplete}
+        />
+      )}
       </div>
     </>
   );

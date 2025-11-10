@@ -79,6 +79,7 @@ export type Database = {
           case_id: string | null
           cohort_id: string | null
           created_at: string | null
+          deadline_at: string | null
           end_at: string
           id: string
           start_at: string
@@ -89,6 +90,7 @@ export type Database = {
           case_id?: string | null
           cohort_id?: string | null
           created_at?: string | null
+          deadline_at?: string | null
           end_at: string
           id?: string
           start_at: string
@@ -99,6 +101,7 @@ export type Database = {
           case_id?: string | null
           cohort_id?: string | null
           created_at?: string | null
+          deadline_at?: string | null
           end_at?: string
           id?: string
           start_at?: string

@@ -49,42 +49,109 @@ export const CasePreviewModal = ({
         </DialogHeader>
 
         <ScrollArea className="h-[65vh] pr-4">
-          <div className="space-y-6">
-            {/* Human-Readable Overview */}
-            {previewText && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Case Overview</CardTitle>
+          <div className="space-y-4">
+            {/* Case Title and Metadata Tiles */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm text-muted-foreground">Title</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm leading-relaxed space-y-4">
-                    {previewText.split('\n\n').map((paragraph, idx) => {
-                      // Check if it's a heading (starts with ##)
-                      if (paragraph.startsWith('## ')) {
-                        return (
-                          <h3 key={idx} className="font-semibold text-base mt-4 mb-2">
-                            {paragraph.replace('## ', '')}
-                          </h3>
-                        );
-                      }
-                      // Check if it's a list item (starts with -)
-                      if (paragraph.startsWith('- ')) {
-                        const items = paragraph.split('\n').filter(line => line.trim());
-                        return (
-                          <ul key={idx} className="list-disc list-inside space-y-1 ml-2">
-                            {items.map((item, i) => (
-                              <li key={i}>{item.replace('- ', '')}</li>
-                            ))}
-                          </ul>
-                        );
-                      }
-                      // Regular paragraph
-                      return paragraph.trim() ? (
-                        <p key={idx} className="text-foreground">
-                          {paragraph}
-                        </p>
-                      ) : null;
-                    })}
+                  <p className="font-semibold">{caseData?.title}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm text-muted-foreground">Subject</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge variant="outline" className="text-base">{caseData?.subject}</Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm text-muted-foreground">Duration</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="font-semibold">{caseData?.durationMinutes} minutes</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm text-muted-foreground">Difficulty</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge variant="secondary">{caseData?.difficulty || "Medium"}</Badge>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Patient Information Tile */}
+            <Card className="border-secondary/30">
+              <CardHeader>
+                <CardTitle>Patient Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="font-medium">{caseData?.patient?.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Age</p>
+                    <p className="font-medium">{caseData?.patient?.age} years</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Gender</p>
+                    <p className="font-medium">{caseData?.patient?.gender}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Clinical Stem Tile */}
+            <Card className="border-accent/30">
+              <CardHeader>
+                <CardTitle>Clinical Presentation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed">{caseData?.stem}</p>
+              </CardContent>
+            </Card>
+
+            {/* Vitals Tile */}
+            <Card className="border-primary/20">
+              <CardHeader>
+                <CardTitle>Vital Signs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {Object.entries(caseData?.vitals || {}).map(([key, value]) => (
+                    <div key={key} className="bg-accent/10 p-3 rounded-lg">
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {key.replace(/_/g, " ")}
+                      </p>
+                      <p className="font-semibold mt-1">{String(value)}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Competencies Tile */}
+            {caseData?.sloIds && (
+              <Card className="border-secondary/30">
+                <CardHeader>
+                  <CardTitle>Learning Objectives (SLOs)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {caseData.sloIds.map((slo: string) => (
+                      <Badge key={slo} variant="secondary" className="text-xs">{slo}</Badge>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

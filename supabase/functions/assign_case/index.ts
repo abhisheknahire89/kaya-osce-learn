@@ -40,8 +40,8 @@ serve(async (req) => {
       throw new Error('Unauthorized: Faculty role required');
     }
 
-    const { case_id, cohort_id, start_at, end_at, time_limit } = await req.json();
-    console.log('Assigning case:', case_id, 'to cohort:', cohort_id);
+    const { case_id, deadline_at } = await req.json();
+    console.log('Assigning case:', case_id, 'with deadline:', deadline_at);
 
     // Verify case is approved
     const { data: caseData, error: caseError } = await supabase
@@ -54,15 +54,16 @@ serve(async (req) => {
       throw new Error('Case must be approved before assignment');
     }
 
-    // Create assignment
+    // Create assignment for all students
     const { data: assignmentData, error: assignmentError } = await supabase
       .from('assignments')
       .insert({
         case_id: case_id,
-        cohort_id: cohort_id,
-        start_at: start_at,
-        end_at: end_at,
-        time_limit: time_limit || 12,
+        cohort_id: null, // No cohort - available to all students
+        start_at: new Date().toISOString(),
+        end_at: deadline_at,
+        deadline_at: deadline_at,
+        time_limit: 12, // Default 12 minutes
         attempts_allowed: 1,
       })
       .select()
@@ -74,12 +75,10 @@ serve(async (req) => {
     console.log('Event: case_assigned', {
       actor: user.id,
       case_id: case_id,
-      cohort_id: cohort_id,
       assignment_id: assignmentData.id,
+      deadline_at: deadline_at,
       timestamp: new Date().toISOString(),
     });
-
-    // TODO: Send notification to cohort students
 
     return new Response(
       JSON.stringify({

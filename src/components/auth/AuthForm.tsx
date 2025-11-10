@@ -95,22 +95,53 @@ export const AuthForm = () => {
 
       if (error) throw error;
 
-      // Get user role
+      // Get user role - use maybeSingle() to handle missing roles
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", data.user.id)
-        .single();
+        .maybeSingle();
 
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error("Role fetch error:", roleError);
+        throw roleError;
+      }
+
+      // If no role found, try to create it from user metadata
+      if (!roleData && data.user.user_metadata?.role) {
+        const { error: insertError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: data.user.id,
+            role: data.user.user_metadata.role,
+          });
+        
+        if (insertError) {
+          console.error("Role insert error:", insertError);
+          // Continue anyway, we'll handle missing role on the dashboard
+        }
+
+        // Also create profile if it doesn't exist
+        const { error: profileInsertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: data.user.id,
+            name: data.user.user_metadata.name || data.user.email,
+          });
+
+        if (profileInsertError) {
+          console.error("Profile insert error:", profileInsertError);
+        }
+      }
 
       toast({
         title: "स्वागतम् Welcome back!",
         description: "Signed in successfully",
       });
 
-      // Navigate based on role
-      navigate(roleData.role === "faculty" ? "/faculty" : "/student");
+      // Navigate based on role (with fallback to user metadata)
+      const userRole = roleData?.role || data.user.user_metadata?.role || "student";
+      navigate(userRole === "faculty" ? "/faculty" : "/student");
     } catch (error: any) {
       toast({
         title: "Error",

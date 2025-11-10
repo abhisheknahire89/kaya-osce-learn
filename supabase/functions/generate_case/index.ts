@@ -256,10 +256,27 @@ Output ONLY the JSON object, no markdown formatting.`;
     //   .select()
     //   .single();
 
+    if (!generatedCase) {
+      throw new Error('Failed to generate valid case');
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         case: generatedCase,
+        preview: {
+          id: generatedCase.id,
+          title: generatedCase.title,
+          subject: generatedCase.subject,
+          durationMinutes: generatedCase.durationMinutes,
+          patientStem: generatedCase.stem,
+          topRubricItems: generatedCase.rubric
+            .flatMap((section: any) => section.items || [])
+            .slice(0, 3)
+            .map((item: any) => item.text),
+          competencyIds: generatedCase.competencyIds || [],
+          rawJson: generatedCase,
+        },
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

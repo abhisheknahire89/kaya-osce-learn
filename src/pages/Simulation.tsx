@@ -151,10 +151,10 @@ const Simulation = () => {
 
       setRunId(runData.run_id);
 
-      // Set initial patient message
+      // Set initial patient message - brief and natural
       setMessages([{
         role: "patient",
-        content: `Namaste Doctor. ${clinical?.stem || "I'm not feeling well."}`,
+        content: `Namaste Doctor. I'm ${clinical?.patient?.name || "the patient"}. I've been having some problems.`,
         timestamp: new Date(),
       }]);
 

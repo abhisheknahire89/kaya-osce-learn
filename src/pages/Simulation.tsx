@@ -101,9 +101,19 @@ const Simulation = () => {
           )
         `)
         .eq("id", assignmentId)
-        .single();
+        .maybeSingle();
 
       if (assignError) throw assignError;
+      
+      if (!assignment) {
+        toast({
+          title: "Assignment not found",
+          description: "This assignment doesn't exist. Redirecting to student dashboard...",
+          variant: "destructive",
+        });
+        setTimeout(() => navigate("/student"), 2000);
+        return;
+      }
 
       const clinical = assignment.cases?.clinical_json as any;
       setCaseData(clinical);

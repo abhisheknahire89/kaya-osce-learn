@@ -45,6 +45,13 @@ export const CasePreviewModal = ({
 
         <ScrollArea className="h-[65vh] pr-4">
           <div className="space-y-4">
+            {/* Review Confirmation */}
+            <div className="flex items-center space-x-2 bg-accent/20 p-3 rounded-lg sticky top-0 z-10 backdrop-blur-sm">
+              <Checkbox id="review-confirm" checked={hasReviewed} onCheckedChange={checked => setHasReviewed(checked as boolean)} className="min-h-[44px] min-w-[44px]" />
+              <Label htmlFor="review-confirm" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+                I have reviewed this case and confirm it is ready for approval
+              </Label>
+            </div>
             {/* Case Title and Metadata Tiles */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="border-primary/20">
@@ -326,15 +333,8 @@ export const CasePreviewModal = ({
           </div>
         </ScrollArea>
 
-        {/* Review Confirmation & Action Buttons */}
-        <div className="space-y-4 pt-4 border-t">
-          <div className="flex items-center space-x-2 bg-accent/20 p-3 rounded-lg">
-            <Checkbox id="review-confirm" checked={hasReviewed} onCheckedChange={checked => setHasReviewed(checked as boolean)} className="min-h-[44px] min-w-[44px]" />
-            <Label htmlFor="review-confirm" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
-              I have reviewed this case and confirm it is ready for approval
-            </Label>
-          </div>
-
+        {/* Action Buttons */}
+        <div className="pt-4 border-t">
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} disabled={isApproving} className="flex-1 rounded-xl">
               <X className="mr-2 h-4 w-4" />

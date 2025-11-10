@@ -136,12 +136,40 @@ export const CasePreviewModal = ({
           <div className="space-y-4">
             {/* Review Confirmation - only show if not view only */}
             {!viewOnly && (
-              <div className="flex items-center space-x-2 bg-accent/20 p-3 rounded-lg sticky top-0 z-10 backdrop-blur-sm">
-                <Checkbox id="review-confirm" checked={hasReviewed} onCheckedChange={checked => setHasReviewed(checked as boolean)} className="min-h-[44px] min-w-[44px]" />
-                <Label htmlFor="review-confirm" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
-                  I have reviewed this case and confirm it is ready for approval
-                </Label>
-              </div>
+              <>
+                <div className="flex items-center space-x-2 bg-accent/20 p-3 rounded-lg sticky top-0 z-10 backdrop-blur-sm">
+                  <Checkbox id="review-confirm" checked={hasReviewed} onCheckedChange={checked => setHasReviewed(checked as boolean)} className="min-h-[44px] min-w-[44px]" />
+                  <Label htmlFor="review-confirm" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+                    I have reviewed this case and confirm it is ready for approval
+                  </Label>
+                </div>
+
+                {/* Deadline Input - show during review if not yet approved */}
+                {!isApproved && (
+                  <Card className="border-primary/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm">Set Assignment Deadline</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="deadline"
+                            type="datetime-local"
+                            value={deadline}
+                            onChange={(e) => setDeadline(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Students must complete the case before this deadline
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
             {/* Case Title and Metadata Tiles */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -439,51 +467,32 @@ export const CasePreviewModal = ({
               
               <Button 
                 onClick={handleApprove} 
-                disabled={!hasReviewed || localIsApproving} 
+                disabled={!hasReviewed || localIsApproving || !deadline} 
                 className="flex-1 rounded-xl bg-gradient-to-r from-primary to-[#7AA86E] text-white"
               >
                 {localIsApproving ? "Approving..." : (
                   <>
                     <Check className="mr-2 h-4 w-4" />
-                    Approve
+                    Approve & Assign
                   </>
                 )}
               </Button>
             </div>
           ) : (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="deadline">Set Deadline *</Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="deadline"
-                    type="datetime-local"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Students must complete the case before this deadline
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={onClose} disabled={isAssigning} className="flex-1 rounded-xl">
-                  <X className="mr-2 h-4 w-4" />
-                  Cancel
-                </Button>
-                
-                <Button 
-                  onClick={handleAssign} 
-                  disabled={!deadline || isAssigning} 
-                  className="flex-1 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E5A1] text-foreground"
-                >
-                  {isAssigning ? "Assigning..." : "Assign to Students"}
-                </Button>
-              </div>
-            </>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={onClose} disabled={isAssigning} className="flex-1 rounded-xl">
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+              
+              <Button 
+                onClick={handleAssign} 
+                disabled={isAssigning} 
+                className="flex-1 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E5A1] text-foreground"
+              >
+                {isAssigning ? "Assigning..." : "Assign to Students"}
+              </Button>
+            </div>
           )}
         </div>
       </DialogContent>

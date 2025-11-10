@@ -578,16 +578,6 @@ const Simulation = () => {
 
       {/* Action Buttons - Fixed at bottom */}
       <div className="border-t bg-card px-4 py-3">
-        {messages.length >= 3 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 text-center">
-            <p className="text-sm text-blue-900 font-medium">
-              You've gathered enough information
-            </p>
-            <p className="text-xs text-blue-700 mt-1">
-              Proceed to diagnosis when ready
-            </p>
-          </div>
-        )}
         <div className="flex gap-2">
           <Button
             onClick={() => navigate(`/diagnosis/${runId}`)}

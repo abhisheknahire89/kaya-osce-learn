@@ -17,6 +17,7 @@ const FacultyDashboard = () => {
     totalCases: 0,
     pendingCases: 0,
     approvedCases: 0,
+    avgCompletion: 0,
   });
 
   useEffect(() => {
@@ -63,10 +64,20 @@ const FacultyDashboard = () => {
         .select("*", { count: "exact", head: true })
         .eq("status", "approved");
 
+      // Calculate average completion rate from simulation runs
+      const { data: runs } = await supabase
+        .from("simulation_runs")
+        .select("id, status");
+
+      const completedRuns = runs?.filter(r => r.status === "scored").length || 0;
+      const totalRuns = runs?.length || 0;
+      const avgCompletion = totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : 0;
+
       setStats({
         totalCases: total || 0,
         pendingCases: pending || 0,
         approvedCases: approved || 0,
+        avgCompletion,
       });
     } catch (error: any) {
       console.error("Error fetching stats:", error);
@@ -153,7 +164,7 @@ const FacultyDashboard = () => {
             <Card className="rounded-2xl border-primary/20 hover-scale">
               <CardHeader className="pb-3">
                 <CardDescription>Avg. Completion</CardDescription>
-                <CardTitle className="text-3xl">78%</CardTitle>
+                <CardTitle className="text-3xl">{stats.avgCompletion}%</CardTitle>
               </CardHeader>
             </Card>
           </div>

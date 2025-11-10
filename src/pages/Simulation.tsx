@@ -17,7 +17,8 @@ import {
   Activity,
   Eye,
   EyeOff,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,49 +55,111 @@ const Simulation = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Load case data (in real app, fetch from assignment)
-  const caseData = sampleCase as any;
+  // State for case data
+  const [caseData, setCaseData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [runId, setRunId] = useState<string>("");
   
-  const [runId] = useState(crypto.randomUUID());
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "patient",
-      content: `Namaste Doctor. ${caseData.stem}`,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [timeRemaining, setTimeRemaining] = useState(caseData.durationMinutes * 60);
+  const [timeRemaining, setTimeRemaining] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSending, setIsSending] = useState(false);
   
   // Vitals & Physical Exam state
-  const [examFindings, setExamFindings] = useState<ExamFinding[]>(
-    Object.entries(caseData.script.onRequestExam || {}).map(([name, value]) => ({
-      name,
-      value: String(value),
-      revealed: false,
-    }))
-  );
+  const [examFindings, setExamFindings] = useState<ExamFinding[]>([]);
   const [showVitals, setShowVitals] = useState(false);
   
   // Lab tests state
-  const [labTests, setLabTests] = useState<LabTest[]>([
-    ...Object.entries(caseData.script.labsOnOrder || {}).map(([name, result]) => ({
-      name,
-      ordered: false,
-      result: String(result),
-    })),
-    // Add common tests with normalized values
-    { name: "Blood_glucose", ordered: false, result: "95 mg/dL (Normal: 70-100)" },
-    { name: "Serum_creatinine", ordered: false, result: "0.9 mg/dL (Normal: 0.6-1.2)" },
-    { name: "TSH", ordered: false, result: "2.5 mIU/L (Normal: 0.5-5.0)" },
-  ]);
+  const [labTests, setLabTests] = useState<LabTest[]>([]);
   const [showLabResults, setShowLabResults] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    loadAssignmentAndStartRun();
+  }, [assignmentId]);
+
+  const loadAssignmentAndStartRun = async () => {
+    try {
+      if (!assignmentId) throw new Error("No assignment ID");
+
+      // Fetch assignment and case data
+      const { data: assignment, error: assignError } = await supabase
+        .from("assignments")
+        .select(`
+          id,
+          case_id,
+          time_limit,
+          cases (
+            id,
+            clinical_json,
+            title,
+            subject
+          )
+        `)
+        .eq("id", assignmentId)
+        .single();
+
+      if (assignError) throw assignError;
+
+      const clinical = assignment.cases?.clinical_json as any;
+      setCaseData(clinical);
+      setTimeRemaining((assignment.time_limit || 12) * 60);
+
+      // Initialize exam findings
+      const findings = Object.entries(clinical?.script?.onRequestExam || {}).map(([name, value]) => ({
+        name,
+        value: String(value),
+        revealed: false,
+      }));
+      setExamFindings(findings);
+
+      // Initialize lab tests
+      const tests: LabTest[] = [
+        ...Object.entries(clinical?.script?.labsOnOrder || {}).map(([name, result]) => ({
+          name,
+          ordered: false,
+          result: String(result),
+        })),
+        { name: "Blood_glucose", ordered: false, result: "95 mg/dL (Normal: 70-100)" },
+        { name: "Serum_creatinine", ordered: false, result: "0.9 mg/dL (Normal: 0.6-1.2)" },
+        { name: "TSH", ordered: false, result: "2.5 mIU/L (Normal: 0.5-5.0)" },
+      ];
+      setLabTests(tests);
+
+      // Start simulation run
+      const { data: runData, error: runError } = await supabase.functions.invoke("start_simulation", {
+        body: {
+          assignment_id: assignmentId,
+        },
+      });
+
+      if (runError) throw runError;
+
+      setRunId(runData.run_id);
+
+      // Set initial patient message
+      setMessages([{
+        role: "patient",
+        content: `Namaste Doctor. ${clinical?.stem || "I'm not feeling well."}`,
+        timestamp: new Date(),
+      }]);
+
+      setLoading(false);
+    } catch (error: any) {
+      console.error("Error loading assignment:", error);
+      toast({
+        title: "Error loading case",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!caseData || timeRemaining === 0) return;
+    
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev <= 0) {
@@ -109,7 +172,7 @@ const Simulation = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [caseData]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -134,14 +197,14 @@ const Simulation = () => {
     setInput("");
     setIsSending(true);
 
-    trackEvent({
-      event: "student_message",
-      actor_id: "student-demo",
-      actor_role: "student",
-      case_id: caseData.id,
-      run_id: runId,
-      extra: { message_length: input.length },
-    });
+      trackEvent({
+        event: "student_message",
+        actor_id: "student",
+        actor_role: "student",
+        case_id: caseData?.id || "unknown",
+        run_id: runId,
+        extra: { message_length: input.length },
+      });
 
     try {
       const { data, error } = await supabase.functions.invoke("student_message", {
@@ -179,11 +242,11 @@ const Simulation = () => {
     );
     trackEvent({
       event: "action_physical_exam",
-      actor_id: "student-demo",
+      actor_id: "student",
       actor_role: "student",
-      case_id: caseData.id,
+      case_id: caseData?.id || "unknown",
       run_id: runId,
-      extra: { exam_type: examFindings[index].name },
+      extra: { exam_type: examFindings[index]?.name },
     });
   };
 
@@ -193,11 +256,11 @@ const Simulation = () => {
     );
     trackEvent({
       event: "action_order_labs",
-      actor_id: "student-demo",
+      actor_id: "student",
       actor_role: "student",
-      case_id: caseData.id,
+      case_id: caseData?.id || "unknown",
       run_id: runId,
-      extra: { lab_test: labTests[index].name },
+      extra: { lab_test: labTests[index]?.name },
     });
     toast({
       title: "Lab ordered",
@@ -209,9 +272,9 @@ const Simulation = () => {
     setIsSubmitting(true);
     trackEvent({
       event: "run_submit",
-      actor_id: "student-demo",
+      actor_id: "student",
       actor_role: "student",
-      case_id: caseData.id,
+      case_id: caseData?.id || "unknown",
       run_id: runId,
     });
     
@@ -219,7 +282,7 @@ const Simulation = () => {
       const { data, error } = await supabase.functions.invoke("submit_run", {
         body: {
           run_id: runId,
-          student_id: "student-demo",
+          student_id: "student",
         },
       });
 
@@ -245,6 +308,14 @@ const Simulation = () => {
     }
   };
 
+  if (loading || !caseData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -256,7 +327,7 @@ const Simulation = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="font-semibold text-sm">{caseData.title}</h1>
+            <h1 className="font-semibold text-sm">{caseData?.title || "Virtual OSCE"}</h1>
             <p className="text-xs text-muted-foreground">Virtual OSCE</p>
           </div>
         </div>

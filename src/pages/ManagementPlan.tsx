@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, AlertTriangle, Stethoscope, FlaskConical, Building2 } from "lucide-react";
-import sampleCase from "@/data/sample-case.json";
+import { Clock, AlertTriangle, Stethoscope, FlaskConical, Building2, Loader2 } from "lucide-react";
 
 interface ManagementOption {
   id: string;
@@ -35,8 +34,18 @@ const ManagementPlan = () => {
   const { runId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const caseData = sampleCase as any;
 
+  const [caseData, setCaseData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [managementOptions, setManagementOptions] = useState<{
+    immediate: ManagementOption[];
+    investigations: ManagementOption[];
+    definitive: ManagementOption[];
+  }>({
+    immediate: [],
+    investigations: [],
+    definitive: [],
+  });
   const [selectedImmediate, setSelectedImmediate] = useState<string[]>([]);
   const [selectedInvestigations, setSelectedInvestigations] = useState<string[]>([]);
   const [selectedDefinitive, setSelectedDefinitive] = useState<string | null>(null);
@@ -44,25 +53,64 @@ const ManagementPlan = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mock management options (in real app, from case data)
-  const immediateOptions: ManagementOption[] = [
-    { id: "A1", text: "Start cooling measures (tepid sponging)", section: "immediate", hint: "For high fever" },
-    { id: "A2", text: "Start ORS / rehydration", section: "immediate", hint: "For dehydration" },
-    { id: "A3", text: "Start broad-spectrum antibiotic", section: "immediate", hint: "Educational only - consider timing" },
-  ];
+  useEffect(() => {
+    loadCaseData();
+  }, [runId]);
 
-  const investigationOptions: ManagementOption[] = [
-    { id: "B1", text: "Order CBC", section: "investigations" },
-    { id: "B2", text: "Order LFT", section: "investigations" },
-    { id: "B3", text: "Order ECG", section: "investigations", hint: "Not typically relevant" },
-    { id: "B4", text: "Order Malaria rapid test", section: "investigations" },
-  ];
+  const loadCaseData = async () => {
+    try {
+      if (!runId) throw new Error("No run ID");
 
-  const definitiveOptions: ManagementOption[] = [
-    { id: "C1", text: "Outpatient care + review in 24-48h", section: "definitive" },
-    { id: "C2", text: "Admit & start IV fluids", section: "definitive" },
-    { id: "C3", text: "Refer to tertiary center", section: "definitive" },
-  ];
+      const { data: run, error } = await supabase
+        .from("simulation_runs")
+        .select(`
+          id,
+          assignment_id,
+          assignments (
+            case_id,
+            cases (
+              clinical_json
+            )
+          )
+        `)
+        .eq("id", runId)
+        .single();
+
+      if (error) throw error;
+
+      const clinical = run.assignments?.cases?.clinical_json as any;
+      setCaseData(clinical);
+
+      // Set management options from case data or use defaults
+      const immediate: ManagementOption[] = clinical?.managementOptions?.immediate || [
+        { id: "A1", text: "Start initial stabilization measures", section: "immediate", hint: "First-line intervention" },
+        { id: "A2", text: "Start supportive care", section: "immediate", hint: "Symptomatic relief" },
+        { id: "A3", text: "Monitor vital signs", section: "immediate", hint: "Ongoing assessment" },
+      ];
+
+      const investigations: ManagementOption[] = clinical?.managementOptions?.investigations || [
+        { id: "B1", text: "Order relevant investigations", section: "investigations" },
+        { id: "B2", text: "Perform targeted examination", section: "investigations" },
+      ];
+
+      const definitive: ManagementOption[] = clinical?.managementOptions?.definitive || [
+        { id: "C1", text: "Outpatient care with follow-up", section: "definitive" },
+        { id: "C2", text: "Admit for observation and treatment", section: "definitive" },
+        { id: "C3", text: "Refer to specialist/tertiary center", section: "definitive" },
+      ];
+
+      setManagementOptions({ immediate, investigations, definitive });
+    } catch (error: any) {
+      console.error("Error loading case data:", error);
+      toast({
+        title: "Error loading case",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleImmediate = (optionId: string) => {
     setSelectedImmediate((prev) =>
@@ -157,7 +205,7 @@ const ManagementPlan = () => {
     const parts = [];
     
     if (selectedImmediate.length > 0) {
-      const immediateTexts = immediateOptions
+      const immediateTexts = managementOptions.immediate
         .filter((opt) => selectedImmediate.includes(opt.id))
         .map((opt) => opt.text);
       parts.push(`Immediate: ${immediateTexts.join(", ")}`);
@@ -168,12 +216,20 @@ const ManagementPlan = () => {
     }
     
     if (selectedDefinitive) {
-      const definitiveText = definitiveOptions.find((opt) => opt.id === selectedDefinitive)?.text;
+      const definitiveText = managementOptions.definitive.find((opt) => opt.id === selectedDefinitive)?.text;
       parts.push(`Disposition: ${definitiveText}`);
     }
 
     return parts.join(" | ");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-6">
@@ -204,7 +260,7 @@ const ManagementPlan = () => {
           </div>
           <p className="text-xs text-muted-foreground">Select primary immediate actions (multi-select)</p>
           <div className="space-y-2">
-            {immediateOptions.map((option) => (
+            {managementOptions.immediate.map((option) => (
               <Card
                 key={option.id}
                 className={`p-3 cursor-pointer transition-all ${
@@ -241,7 +297,7 @@ const ManagementPlan = () => {
           </div>
           <p className="text-xs text-muted-foreground">Select relevant tests (multi-select)</p>
           <div className="space-y-2">
-            {investigationOptions.map((option) => (
+            {managementOptions.investigations.map((option) => (
               <Card
                 key={option.id}
                 className={`p-3 cursor-pointer transition-all ${
@@ -278,7 +334,7 @@ const ManagementPlan = () => {
           </div>
           <p className="text-xs text-muted-foreground">Select disposition (single-select)</p>
           <div className="space-y-2">
-            {definitiveOptions.map((option) => (
+            {managementOptions.definitive.map((option) => (
               <Card
                 key={option.id}
                 className={`p-3 cursor-pointer transition-all ${

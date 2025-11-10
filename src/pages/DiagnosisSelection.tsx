@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,7 @@ import { TopMicroHeader } from "@/components/layout/TopMicroHeader";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { trackEvent } from "@/lib/analytics";
-import { CheckCircle2, Clock, Info } from "lucide-react";
-import sampleCase from "@/data/sample-case.json";
+import { CheckCircle2, Clock, Info, Loader2 } from "lucide-react";
 
 interface DiagnosisOption {
   id: string;
@@ -25,42 +24,84 @@ const DiagnosisSelection = () => {
   const { runId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const caseData = sampleCase as any;
 
+  const [caseData, setCaseData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [diagnosisOptions, setDiagnosisOptions] = useState<DiagnosisOption[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [freeText, setFreeText] = useState("");
   const [justification, setJustification] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mock diagnosis options (in real app, from case data)
-  const diagnosisOptions: DiagnosisOption[] = [
-    {
-      id: "D1",
-      text: "Pittaja Jwara (Pitta predominant fever)",
-      hint: "Intense thirst, red tongue, high fever",
-      sloIds: ["SLO-KAY-JW-01"],
-      isCorrect: true,
-    },
-    {
-      id: "D2",
-      text: "Viral fever (non-specific)",
-      hint: "General viral infection",
-      isCorrect: false,
-    },
-    {
-      id: "D3",
-      text: "Malaria",
-      hint: "Periodic fever pattern",
-      isCorrect: false,
-    },
-    {
-      id: "D4",
-      text: "Other (enter diagnosis below)",
-      hint: "Free-text diagnosis",
-      isCorrect: false,
-    },
-  ];
+  useEffect(() => {
+    loadCaseData();
+  }, [runId]);
+
+  const loadCaseData = async () => {
+    try {
+      if (!runId) throw new Error("No run ID");
+
+      const { data: run, error } = await supabase
+        .from("simulation_runs")
+        .select(`
+          id,
+          assignment_id,
+          assignments (
+            case_id,
+            cases (
+              clinical_json
+            )
+          )
+        `)
+        .eq("id", runId)
+        .single();
+
+      if (error) throw error;
+
+      const clinical = run.assignments?.cases?.clinical_json as any;
+      setCaseData(clinical);
+
+      // Extract diagnosis options from MCQs or use defaults
+      const options: DiagnosisOption[] = clinical?.diagnosisOptions || [
+        {
+          id: "D1",
+          text: "Primary diagnosis from case",
+          hint: "Based on presented symptoms",
+          isCorrect: true,
+        },
+        {
+          id: "D2",
+          text: "Alternative diagnosis 1",
+          hint: "Differential diagnosis",
+          isCorrect: false,
+        },
+        {
+          id: "D3",
+          text: "Alternative diagnosis 2",
+          hint: "Secondary differential",
+          isCorrect: false,
+        },
+        {
+          id: "D4",
+          text: "Other (enter diagnosis below)",
+          hint: "Free-text diagnosis",
+          isCorrect: false,
+        },
+      ];
+
+      setDiagnosisOptions(options);
+    } catch (error: any) {
+      console.error("Error loading case data:", error);
+      toast({
+        title: "Error loading case",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSelectOption = (optionId: string) => {
     setSelectedOption(optionId);
@@ -93,9 +134,9 @@ const DiagnosisSelection = () => {
 
       trackEvent({
         event: "diagnosis_submitted",
-        actor_id: "student-demo",
+        actor_id: "student",
         actor_role: "student",
-        case_id: caseData.id,
+        case_id: caseData?.id || "unknown",
         run_id: runId || "mock",
         extra: { diagnosis_id: selectedOption },
       });
@@ -125,6 +166,14 @@ const DiagnosisSelection = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-6">

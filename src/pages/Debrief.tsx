@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TopMicroHeader } from "@/components/layout/TopMicroHeader";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   CheckCircle2,
   XCircle,
@@ -52,115 +53,109 @@ const Debrief = () => {
 
   const loadDebriefData = async () => {
     try {
-      // In real implementation, fetch from API
-      // For now, use mock data
-      const mockData: DebriefData = {
-        runId: runId || "mock-run",
-        caseId: "case-kaya-001",
-        studentId: "student-demo",
-        score: 9,
-        maxScore: 13,
-        percent: 69,
-        grade: "Borderline",
-        timeTakenSec: 670,
-        rubric: [
-          {
-            section: "History",
-            score: 2,
-            max: 4,
-            items: [
-              { id: "H1", text: "Ask SOCRATES", achieved: 1, evidence: "asked 'where is the pain' at 00:35" },
-              { id: "H2", text: "Ask agni/appetite", achieved: 0, tip: "Ask: 'How is your appetite? Any burning?'", reference: "HEB-NCH-CBDC Kayachikitsa" },
-              { id: "H3", text: "Inquire about aggravating factors", achieved: 1, evidence: "asked about worse times" },
-              { id: "H4", text: "Ask about recent travel", achieved: 0, tip: "Ask: 'Any recent travel or exposure?'", reference: "Virtual OSCE notes" },
-            ],
-          },
-          {
-            section: "Exam/Investigations",
-            score: 3,
-            max: 4,
-            items: [
-              { id: "E1", text: "Perform Nadi Pariksha", achieved: 1, evidence: "Nadi check performed" },
-              { id: "E2", text: "Assess Pittaja signs", achieved: 1, evidence: "Checked tongue and skin" },
-              { id: "E3", text: "Order relevant investigations", achieved: 1, evidence: "Ordered CBC" },
-              { id: "E4", text: "Interpret lab results", achieved: 0, tip: "Explain the significance of elevated WBC", reference: "Clinical Labs Guide" },
-            ],
-          },
-          {
-            section: "Diagnosis",
-            score: 1,
-            max: 2,
-            items: [
-              { id: "D1", text: "State provisional diagnosis", achieved: 1, evidence: "Stated Pittaja Jwara" },
-              { id: "D2", text: "Justify differential", achieved: 0, tip: "Provide brief differential diagnosis", reference: "Diagnostic Guidelines" },
-            ],
-          },
-          {
-            section: "Management",
-            score: 2,
-            max: 2,
-            items: [
-              { id: "M1", text: "Initiate cooling measures", achieved: 1, evidence: "Suggested cold drinks and rest" },
-              { id: "M2", text: "Plan follow-up", achieved: 1, evidence: "Advised to return if worsens" },
-            ],
-          },
-          {
-            section: "Communication",
-            score: 1,
-            max: 1,
-            items: [
-              { id: "C1", text: "Explain and reassure", achieved: 1, evidence: "Clear explanation provided" },
-            ],
-          },
-        ],
-        missedChecklist: [
-          { id: "H2", text: "Ask agni/appetite", tip: "Ask: 'How is your appetite? Any burning?'", resource: "Charaka Samhita — Vimana Sthana" },
-          { id: "H4", text: "Ask about recent travel", tip: "Ask: 'Any recent travel or exposure?'", resource: "Clinical Methods in Ayurveda — History Taking" },
-          { id: "E4", text: "Interpret lab results", tip: "Explain the significance of elevated WBC", resource: "Clinical Methods in Ayurveda — Diagnostic Reasoning" },
-          { id: "D2", text: "Justify differential", tip: "Provide brief differential diagnosis", resource: "Kayachikitsa: Principles and Practice — Chapter on Jwara" },
-        ],
-        stepwiseReasoning: [
-          "1. Fever + intense thirst → suspect Pittaja involvement",
-          "2. Confirm with Nadi & tongue exam",
-          "3. Order CBC & LFT to rule out systemic inflammation",
-          "4. Start cooling measures and ORS; plan referral if deterioration",
-        ],
-        learningPearls: [
-          { text: "Pittaja Jwara typically presents with intense thirst and red tongue", ref: "Kayachikitsa: Principles and Practice — Chapter on Jwara" },
-          { text: "Order targeted tests; non-relevant tests return normal values", ref: "Clinical Methods in Ayurveda — Diagnostic Reasoning" },
-          { text: "Systematic SOCRATES approach improves diagnostic accuracy", ref: "Clinical Methods in Ayurveda — History Taking in Ayurveda" },
-        ],
-        mcqs: [
-          {
-            id: "Q1",
-            stem: "A typical Pittaja feature is:",
-            choices: ["Increased thirst", "Pale tongue", "Cold intolerance", "Bradycardia"],
-            correctIndex: 0,
-            explanation: "Pitta produces heat and thirst. See SLO-KAY-JW-01",
-          },
-          {
-            id: "Q2",
-            stem: "Which test is most useful to confirm systemic inflammation?",
-            choices: ["TSH", "CBC", "Blood glucose", "Lipid panel"],
-            correctIndex: 1,
-            explanation: "CBC shows leukocytosis supporting inflammatory response",
-          },
-          {
-            id: "Q3",
-            stem: "Immediate first step in febrile dehydration?",
-            choices: ["Antibiotics", "Start ORS and cooling", "CT scan", "Blood culture"],
-            correctIndex: 1,
-            explanation: "Stabilize hydration and reduce body heat first",
-          },
-        ],
-        audit: {
-          modelMatches: [{ itemId: "H2", confidence: 72 }],
-          rawModelOutputId: "case-kaya-009-modelout-uuid",
-          events: ["order_test:CBC", "request_exam:nadi"],
-        },
+      if (!runId) {
+        throw new Error("No run ID provided");
+      }
+
+      // Fetch simulation run data
+      const { data: run, error: runError } = await supabase
+        .from("simulation_runs")
+        .select(`
+          id,
+          student_id,
+          score_json,
+          created_at,
+          start_at,
+          end_at,
+          transcript,
+          actions,
+          assignment_id,
+          assignments (
+            case_id,
+            cases (
+              id,
+              title,
+              subject,
+              clinical_json,
+              cbdc_tags
+            )
+          )
+        `)
+        .eq("id", runId)
+        .single();
+
+      if (runError) throw runError;
+      if (!run) throw new Error("Run not found");
+
+      const scoreData = run.score_json as any;
+      const clinicalData = run.assignments?.cases?.clinical_json as any;
+      const timeTaken = run.start_at && run.end_at 
+        ? Math.floor((new Date(run.end_at).getTime() - new Date(run.start_at).getTime()) / 1000)
+        : 0;
+
+      // Process rubric data
+      const rubric = scoreData?.rubric || [];
+      const missedItems = rubric.flatMap((section: any) => 
+        section.items?.filter((item: any) => !item.achieved).map((item: any) => ({
+          id: item.id,
+          text: item.text,
+          tip: item.tip || "Review this competency",
+          resource: item.reference || "NCISM CBDC Guidelines",
+        })) || []
+      );
+
+      // Extract learning pearls and reasoning
+      const learningPearls = clinicalData?.learningPearls || [
+        { text: "Review case competencies and clinical reasoning pathways", ref: "NCISM CBDC Standards" }
+      ];
+
+      const stepwiseReasoning = scoreData?.reasoning || [
+        "Review the clinical approach for this case type",
+        "Practice systematic history taking and examination",
+        "Study relevant Ayurvedic principles and modern correlations",
+      ];
+
+      // Get remediation MCQs
+      const { data: mcqsData } = await supabase
+        .from("mcqs")
+        .select("question_json")
+        .eq("case_id", run.assignments?.case_id)
+        .limit(3);
+
+      const mcqs = mcqsData?.map(m => {
+        const q = m.question_json as any;
+        return {
+          id: q.id,
+          stem: q.stem || q.question,
+          choices: q.choices || q.options,
+          correctIndex: q.correctIndex || q.correct,
+          explanation: q.explanation || q.rationale,
+        };
+      }) || [];
+
+      const grade = scoreData?.grade || 
+        (scoreData?.percent >= 85 ? "Distinction" : 
+         scoreData?.percent >= 70 ? "Pass" :
+         scoreData?.percent >= 50 ? "Borderline" : "Fail");
+
+      const debriefData: DebriefData = {
+        runId: run.id,
+        caseId: run.assignments?.case_id || "",
+        studentId: run.student_id,
+        score: scoreData?.score || 0,
+        maxScore: scoreData?.maxScore || 0,
+        percent: scoreData?.percent || 0,
+        grade,
+        timeTakenSec: timeTaken,
+        rubric,
+        missedChecklist: missedItems,
+        stepwiseReasoning,
+        learningPearls,
+        mcqs,
+        audit: scoreData?.audit || {},
       };
 
-      setDebriefData(mockData);
+      setDebriefData(debriefData);
     } catch (error) {
       toast({
         title: "Error",

@@ -51,7 +51,7 @@ const SUGGESTED_PROMPTS = [
 ];
 
 const Simulation = () => {
-  const { id: assignmentId } = useParams();
+  const { runId: assignmentId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   

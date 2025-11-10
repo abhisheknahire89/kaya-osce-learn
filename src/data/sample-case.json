@@ -1,0 +1,186 @@
+{
+  "id": "case-kaya-001",
+  "slug": "pittaja-jwara-01",
+  "title": "Pittaja Jwara — Acute fever with Pitta predominance",
+  "subject": "Kayachikitsa",
+  "competencyIds": ["NCISM-KAY-CLIN-001"],
+  "sloIds": ["SLO-KAY-JW-01"],
+  "millerLevel": "ShowsHow",
+  "bloomDomain": "Cognitive/Affective",
+  "durationMinutes": 12,
+  "patient": {
+    "name": "Smt. Meera",
+    "age": 34,
+    "gender": "F",
+    "language_preference": "English"
+  },
+  "stem": "34-year-old female with 2 days of high fever, severe thirst, irritability, and yellowish discoloration of urine.",
+  "vitals": {
+    "temp": "102.4 F",
+    "bp": "110/70",
+    "hr": 110,
+    "rr": 22
+  },
+  "script": {
+    "history": {
+      "onset": "Sudden onset 2 days back",
+      "symptom_quality": "High fever, intense thirst, burning sensation in body",
+      "aggravation_relief": "Worse at night, slightly better after cold drinks",
+      "bowel_urine": "Loose stools x1, urine dark yellow and reduced quantity",
+      "appetite": "Loss of appetite, feels nauseous",
+      "sleep": "Disturbed due to restlessness and body heat"
+    },
+    "onRequestExam": {
+      "general": "Patient is restless, appears dehydrated, tongue red with yellow coating",
+      "pulse": "Rapid, thin (Nadi: Pittaja - 110 bpm)",
+      "skin": "Warm to touch, slightly flushed",
+      "abdomen": "Soft, mild tenderness in epigastric region",
+      "throat": "Mildly congested, no exudates"
+    },
+    "labsOnOrder": {
+      "CBC": "WBC 14,000 (elevated), Neutrophils 75%, Hb 12.8, Platelet 250,000",
+      "LFT": "Mildly elevated bilirubin (1.8 mg/dL), ALT 45 U/L (slightly raised)",
+      "Urine_routine": "Yellow colored, specific gravity 1.025, trace protein",
+      "Malaria_rapid": "Negative"
+    },
+    "dynamicTriggers": {
+      "check_nadi": ["onRequestExam.pulse"],
+      "physical_exam": ["onRequestExam.general", "onRequestExam.skin"],
+      "order_labs": ["labsOnOrder.CBC", "labsOnOrder.LFT", "labsOnOrder.Urine_routine"]
+    }
+  },
+  "rubric": [
+    {
+      "section": "History Taking",
+      "max": 3,
+      "items": [
+        {
+          "id": "H1",
+          "text": "Elicit onset, duration, and character of fever (SOCRATES approach)",
+          "weight": 1,
+          "competencyIds": ["NCISM-KAY-CLIN-001"],
+          "sloIds": ["SLO-KAY-JW-01"]
+        },
+        {
+          "id": "H2",
+          "text": "Ask about fluid intake, thirst, and signs of dehydration",
+          "weight": 1,
+          "sloIds": ["SLO-KAY-JW-01"]
+        },
+        {
+          "id": "H3",
+          "text": "Inquire about aggravating/relieving factors and Pittaja symptoms",
+          "weight": 1,
+          "sloIds": ["SLO-KAY-JW-01"]
+        }
+      ]
+    },
+    {
+      "section": "Examination/Investigation",
+      "max": 3,
+      "items": [
+        {
+          "id": "E1",
+          "text": "Perform Nadi Pariksha and recognize Pittaja pulse characteristics",
+          "weight": 1,
+          "competencyIds": ["NCISM-KAY-EXM-002"]
+        },
+        {
+          "id": "E2",
+          "text": "Assess for Pittaja signs (tongue coating, skin warmth, thirst)",
+          "weight": 1,
+          "sloIds": ["SLO-KAY-JW-01"]
+        },
+        {
+          "id": "E3",
+          "text": "Order relevant investigations (CBC, LFT, malaria screen)",
+          "weight": 1,
+          "competencyIds": ["NCISM-KAY-CLIN-001"]
+        }
+      ]
+    },
+    {
+      "section": "Diagnosis",
+      "max": 2,
+      "items": [
+        {
+          "id": "D1",
+          "text": "State provisional diagnosis: Pittaja Jwara/Agitapati",
+          "weight": 2,
+          "competencyIds": ["NCISM-KAY-CLIN-001"],
+          "sloIds": ["SLO-KAY-JW-01"]
+        }
+      ]
+    },
+    {
+      "section": "Management",
+      "max": 1,
+      "items": [
+        {
+          "id": "M1",
+          "text": "Initiate cooling measures, ORS, consider antipyretics and referral if severe",
+          "weight": 1,
+          "competencyIds": ["NCISM-KAY-CLIN-001"]
+        }
+      ]
+    },
+    {
+      "section": "Communication",
+      "max": 1,
+      "items": [
+        {
+          "id": "C1",
+          "text": "Explain diagnosis and management plan clearly; provide reassurance",
+          "weight": 1,
+          "sloIds": ["SLO-KAY-JW-01"]
+        }
+      ]
+    }
+  ],
+  "mcqs": [
+    {
+      "id": "Q1",
+      "stem": "A patient with Pittaja Jwara typically presents with:",
+      "choices": [
+        "Cold intolerance and preference for warm drinks",
+        "Intense thirst and preference for cold drinks",
+        "Pale tongue with white coating",
+        "Bradycardia and low-grade fever"
+      ],
+      "correctIndex": 1,
+      "rationale": "Pittaja Jwara is characterized by intense burning sensation, high fever, and excessive thirst with preference for cold drinks. The patient experiences aggravation of Pitta dosha.",
+      "sloId": "SLO-KAY-JW-01"
+    },
+    {
+      "id": "Q2",
+      "stem": "In Nadi Pariksha, a Pittaja pulse is characterized by:",
+      "choices": [
+        "Slow and deep like a frog",
+        "Fast and thin like a crow",
+        "Irregular and moving like a snake",
+        "Weak and thready"
+      ],
+      "correctIndex": 1,
+      "rationale": "Pittaja Nadi is described as fast (rapid) and thin (light), similar to the movement of a crow (Kaka gati). This reflects the increased metabolic rate in Pitta conditions.",
+      "sloId": "SLO-KAY-JW-01"
+    },
+    {
+      "id": "Q3",
+      "stem": "First-line cooling measure for Pittaja Jwara includes:",
+      "choices": [
+        "Hot fomentation with heating oils",
+        "Oral rehydration with cooling herbs like Usheera",
+        "Exposure to direct sunlight",
+        "Spicy food to stimulate digestion"
+      ],
+      "correctIndex": 1,
+      "rationale": "Pittaja conditions require cooling therapies. ORS with cooling herbs like Usheera (Vetiver) helps reduce Pitta and prevent dehydration. Heat-inducing measures would aggravate Pitta.",
+      "sloId": "SLO-KAY-JW-01"
+    }
+  ],
+  "metadata": {
+    "sourcePdfId": "[file-HEB-NCISM-CBDC]",
+    "createdAt": "2025-01-11T00:00:00Z",
+    "createdBy": "faculty:sample"
+  }
+}

@@ -6,7 +6,7 @@ import kayaLogo from "@/assets/kaya-logo.png";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/30">
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/30 to-secondary/20">
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
@@ -14,10 +14,10 @@ const Index = () => {
             <img src={kayaLogo} alt="Kaya Logo" className="h-12 w-auto" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">Kaya CBDC V-OSCE</h1>
-              <p className="text-sm text-muted-foreground">AI-Driven Virtual Patient Assessment</p>
+              <p className="text-sm text-muted-foreground" lang="hi">काय - आयुर्वेदिक आभासी परीक्षा</p>
             </div>
           </div>
-          <Button asChild>
+          <Button asChild className="rounded-2xl">
             <Link to="/auth">Sign In</Link>
           </Button>
         </div>
@@ -27,16 +27,19 @@ const Index = () => {
       <section className="container mx-auto px-4 py-16 text-center">
         <div className="mx-auto max-w-3xl">
           <h2 className="mb-4 text-5xl font-bold text-foreground">
-            Next-Generation Virtual OSCE Platform
+            AI-Powered Virtual OSCE for Ayurvedic Education
           </h2>
+          <p className="mb-2 text-sm text-secondary font-medium" lang="hi">
+            आयुर्वेदिक शिक्षा के लिए एआई-संचालित आभासी परीक्षा
+          </p>
           <p className="mb-8 text-xl text-muted-foreground">
-            AI-powered virtual patient assessments aligned with NCH CBDC standards for Ayurvedic & Homoeopathic medical education
+            NCISM CBDC-aligned virtual patient assessments for BAMS students with Gemini-powered case generation
           </p>
           <div className="flex justify-center gap-4">
-            <Button size="lg" asChild>
+            <Button size="lg" asChild className="rounded-2xl bg-gradient-to-r from-primary to-[#7AA86E] text-white">
               <Link to="/auth">Get Started</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="lg" variant="outline" asChild className="rounded-2xl border-secondary text-foreground hover:bg-secondary/10">
               <a href="#features">Learn More</a>
             </Button>
           </div>

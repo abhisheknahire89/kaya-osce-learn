@@ -25,27 +25,7 @@ const StudentAssigned = () => {
     try {
       setLoading(true);
 
-      // Fetch profile to get cohort
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("metadata")
-        .eq("id", user!.id)
-        .single();
-
-      const metadata = profile?.metadata as { cohort_id?: string } | null;
-      const cohortId = metadata?.cohort_id;
-
-      if (!cohortId) {
-        toast({
-          title: "No cohort assigned",
-          description: "Please update your profile to select a cohort",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Fetch assignments for user's cohort
+      // Fetch assignments available to all students (cohort_id is null)
       const { data: assignmentsData, error } = await supabase
         .from("assignments")
         .select(`
@@ -58,9 +38,8 @@ const StudentAssigned = () => {
             clinical_json
           )
         `)
-        .eq("cohort_id", cohortId)
-        .gte("end_at", new Date().toISOString())
-        .order("start_at", { ascending: true });
+        .is("cohort_id", null)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setAssignments(assignmentsData || []);

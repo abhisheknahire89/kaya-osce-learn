@@ -35,15 +35,21 @@ const StudentDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch all approved cases (no cohort filtering)
-      const { data: casesData, error: casesError } = await supabase
-        .from("cases")
-        .select("*")
-        .eq("status", "approved")
+      // Fetch assigned cases only
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from("assignments")
+        .select(`
+          *,
+          cases (*)
+        `)
+        .is("cohort_id", null)
         .order("created_at", { ascending: false });
 
-      if (casesError) throw casesError;
-      setCases(casesData || []);
+      if (assignmentsError) throw assignmentsError;
+      
+      // Store assignments (not just cases)
+      const assignmentsWithCases = assignmentsData || [];
+      setCases(assignmentsWithCases);
 
       // Fetch completed simulation runs
       const { data: runsData, error: runsError } = await supabase
@@ -57,7 +63,7 @@ const StudentDashboard = () => {
       setCompletedRuns(runsData || []);
 
       // Calculate statistics
-      const totalCases = casesData?.length || 0;
+      const totalCases = assignmentsWithCases?.length || 0;
       const completed = runsData?.length || 0;
       const scores = runsData?.map(r => (r.score_json as any)?.percent || 0).filter(s => s > 0) || [];
       const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
@@ -198,9 +204,12 @@ const StudentDashboard = () => {
                   </CardContent>
                 </Card>
               ) : (
-                cases.slice(0, 10).map((caseItem) => {
+                cases.slice(0, 10).map((assignment: any) => {
+                  const caseItem = assignment.cases;
+                  if (!caseItem) return null;
+                  
                   return (
-                    <Card key={caseItem.id} className="rounded-2xl border-primary/10 hover:shadow-md transition-shadow">
+                    <Card key={assignment.id} className="rounded-2xl border-primary/10 hover:shadow-md transition-shadow">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -218,7 +227,7 @@ const StudentDashboard = () => {
                           size="sm"
                           className="w-full rounded-xl"
                         >
-                          <Link to={`/simulation/${caseItem.id}`}>
+                          <Link to={`/simulation/${assignment.id}`}>
                             <PlayCircle className="mr-2 h-4 w-4" />
                             Start Case
                           </Link>

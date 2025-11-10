@@ -8,10 +8,11 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, ArrowLeft, Eye, Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import kayaLogo from "@/assets/kaya-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
 
 const SUBJECTS = [
   "Kayachikitsa",
@@ -43,6 +44,7 @@ const DOSHAS = ["Vata", "Pitta", "Kapha"];
 const GenerateCase = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [subject, setSubject] = useState("");
   const [sloIds, setSloIds] = useState("");
   const [millerLevel, setMillerLevel] = useState("");
@@ -53,6 +55,8 @@ const GenerateCase = () => {
   const [specialModality, setSpecialModality] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCase, setGeneratedCase] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
 
   const handleGenerate = async () => {
     if (!subject || !sloIds || !millerLevel || !bloomDomain) {
@@ -110,7 +114,23 @@ const GenerateCase = () => {
       }
 
       if (data.error) {
-        throw new Error(data.error);
+        // Handle specific error types
+        if (data.error === 'AI_KEY_NOT_CONFIGURED') {
+          toast({
+            title: "Veda AI Not Configured",
+            description: data.message || "Please contact support for assistance.",
+            variant: "destructive",
+          });
+        } else if (data.error === 'AI_GENERATION_ERROR') {
+          toast({
+            title: "Generation Error",
+            description: data.message || "Veda AI encountered an error. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          throw new Error(data.error);
+        }
+        return;
       }
 
       if (!data.success || !data.case) {
@@ -131,6 +151,57 @@ const GenerateCase = () => {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!generatedCase || !user) return;
+
+    setIsApproving(true);
+
+    try {
+      // Insert case into database
+      const { data: caseData, error: caseError } = await supabase
+        .from("cases")
+        .insert({
+          slug: generatedCase.slug,
+          title: generatedCase.title,
+          subject: generatedCase.subject,
+          difficulty: getDifficultyLabel(),
+          clinical_json: generatedCase,
+          created_by: user.id,
+          status: "approved",
+          cbdc_tags: {
+            competencyIds: generatedCase.competencyIds,
+            sloIds: generatedCase.sloIds,
+            millerLevel: generatedCase.millerLevel,
+            bloomDomain: generatedCase.bloomDomain,
+          },
+        })
+        .select()
+        .single();
+
+      if (caseError) throw caseError;
+
+      toast({
+        title: "Case approved successfully",
+        description: "The case is now available for assignment",
+      });
+
+      setShowPreview(false);
+      setGeneratedCase(null);
+      
+      // Navigate back to faculty dashboard
+      navigate("/faculty");
+    } catch (error: any) {
+      console.error("Error approving case:", error);
+      toast({
+        title: "Approval failed",
+        description: error.message || "Failed to approve case. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -323,13 +394,23 @@ const GenerateCase = () => {
                     <p className="font-medium">{generatedCase.title}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1 rounded-2xl" size="sm">
+                    <Button
+                      variant="outline"
+                      className="flex-1 rounded-2xl"
+                      size="sm"
+                      onClick={() => setShowPreview(true)}
+                    >
                       <Eye className="mr-2 h-4 w-4" />
                       Full Preview
                     </Button>
-                    <Button className="flex-1 rounded-2xl bg-secondary text-secondary-foreground hover:bg-secondary/90" size="sm">
+                    <Button
+                      className="flex-1 rounded-2xl bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                      size="sm"
+                      onClick={handleApprove}
+                      disabled={isApproving}
+                    >
                       <Check className="mr-2 h-4 w-4" />
-                      Approve & Publish
+                      {isApproving ? "Approving..." : "Approve & Publish"}
                     </Button>
                   </div>
                 </CardContent>
@@ -338,6 +419,15 @@ const GenerateCase = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Preview Modal */}
+      <CasePreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        caseData={generatedCase}
+        onApprove={handleApprove}
+        isApproving={isApproving}
+      />
     </div>
   );
 };

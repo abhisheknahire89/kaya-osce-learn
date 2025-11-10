@@ -55,7 +55,17 @@ serve(async (req) => {
   try {
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not configured');
+      console.error('GEMINI_API_KEY is not configured');
+      return new Response(
+        JSON.stringify({
+          error: 'AI_KEY_NOT_CONFIGURED',
+          message: 'Veda AI is not configured. Please contact support for assistance.',
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const params = GenerateCaseParamsSchema.parse(await req.json());
@@ -107,7 +117,16 @@ Return: valid ClinicalCase JSON with all required fields including id (UUID), ti
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Gemini API error:', response.status, errorText);
-        throw new Error(`Gemini API error: ${response.status}`);
+        return new Response(
+          JSON.stringify({
+            error: 'AI_GENERATION_ERROR',
+            message: 'Veda AI encountered an error while generating the case. Please try again.',
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
 
       const data = await response.json();

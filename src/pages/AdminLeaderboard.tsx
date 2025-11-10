@@ -20,7 +20,7 @@ const AdminLeaderboard = () => {
     yesterday.setDate(yesterday.getDate() - 1);
     return yesterday.toISOString().split('T')[0];
   });
-  const [cohortId, setCohortId] = useState<string>('');
+  const [cohortId, setCohortId] = useState<string>('all');
   const [cohorts, setCohorts] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,7 +64,7 @@ const AdminLeaderboard = () => {
         order: 'desc',
       });
 
-      if (cohortId) {
+      if (cohortId && cohortId !== 'all') {
         params.append('cohortId', cohortId);
       }
 
@@ -99,7 +99,7 @@ const AdminLeaderboard = () => {
       setRefreshing(true);
       
       const { data, error } = await supabase.functions.invoke('admin_leaderboard', {
-        body: { period, snapshot_date: date, cohort_id: cohortId || null },
+        body: { period, snapshot_date: date, cohort_id: cohortId && cohortId !== 'all' ? cohortId : null },
         method: 'POST',
       });
 
@@ -130,7 +130,7 @@ const AdminLeaderboard = () => {
         period,
         date,
         format,
-        ...(cohortId && { cohortId }),
+        ...(cohortId && cohortId !== 'all' && { cohortId }),
       });
 
       const { data, error } = await supabase.functions.invoke(
@@ -242,7 +242,7 @@ const AdminLeaderboard = () => {
                     <SelectValue placeholder="All cohorts" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All cohorts</SelectItem>
+                    <SelectItem value="all">All cohorts</SelectItem>
                     {cohorts.map(c => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}

@@ -13,6 +13,7 @@ import kayaLogo from "@/assets/kaya-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
+import { LoadingWithFacts } from "@/components/faculty/LoadingWithFacts";
 
 const SUBJECTS = [
   "Kayachikitsa",
@@ -212,8 +213,12 @@ const GenerateCase = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
+    <>
+      {/* Loading Overlay */}
+      {isGenerating && <LoadingWithFacts />}
+      
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Link to="/faculty">
@@ -428,7 +433,8 @@ const GenerateCase = () => {
         onApprove={handleApprove}
         isApproving={isApproving}
       />
-    </div>
+      </div>
+    </>
   );
 };
 

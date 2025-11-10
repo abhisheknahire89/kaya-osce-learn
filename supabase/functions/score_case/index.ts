@@ -23,14 +23,11 @@ const getCitationForTopic = (topic: string): string => {
   if (topicLower.includes("diagnosis") || topicLower.includes("differential")) {
     return "Clinical Methods in Ayurveda — Diagnostic Reasoning";
   }
-  if (topicLower.includes("competency") || topicLower.includes("cbdc")) {
-    return "NCISM CBDC — Kayachikitsa Clinical Competencies";
-  }
   if (topicLower.includes("osce") || topicLower.includes("assessment")) {
     return "Virtual OSCE Guidelines — Rubric Development";
   }
 
-  return "NCISM CBDC — Kayachikitsa Clinical Competencies";
+  return "Clinical Methods in Ayurveda";
 };
 
 const corsHeaders = {

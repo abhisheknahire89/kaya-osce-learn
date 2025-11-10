@@ -100,14 +100,13 @@ const Debrief = () => {
           id: item.id,
           text: item.text,
           tip: item.tip || "Review this competency",
-          resource: item.reference || "NCISM CBDC Guidelines",
+          resource: item.reference || "Clinical Methods in Ayurveda",
         })) || []
       );
 
-      // Extract learning pearls and reasoning
-      const learningPearls = clinicalData?.learningPearls || [
-        { text: "Review case competencies and clinical reasoning pathways", ref: "NCISM CBDC Standards" }
-      ];
+      // Extract learning pearls and reasoning (filter out NCISM CBDC citations)
+      const learningPearls = (clinicalData?.learningPearls || [])
+        .filter((pearl: any) => !pearl.ref?.includes("NCISM CBDC"));
 
       const stepwiseReasoning = scoreData?.reasoning || [
         "Review the clinical approach for this case type",
@@ -348,7 +347,9 @@ const Debrief = () => {
             {debriefData.learningPearls.map((pearl, idx) => (
               <div key={idx} className="text-sm">
                 <p className="text-foreground">{pearl.text}</p>
-                <p className="text-xs text-blue-600 mt-1">— {pearl.ref}</p>
+                {pearl.ref && !pearl.ref.includes("NCISM CBDC") && (
+                  <p className="text-xs text-blue-600 mt-1">— {pearl.ref}</p>
+                )}
               </div>
             ))}
           </div>

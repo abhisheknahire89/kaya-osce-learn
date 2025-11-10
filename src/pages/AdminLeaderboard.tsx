@@ -213,30 +213,11 @@ const AdminLeaderboard = () => {
                   onChange={(e) => setDate(e.target.value)}
                   className="rounded-xl"
                 />
-              </div>
+            </div>
 
-              {/* Cohort Filter */}
-              <div>
-                <label className="text-sm font-medium mb-2 block flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  Cohort
-                </label>
-                <Select value={cohortId} onValueChange={setCohortId}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="All cohorts" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All cohorts</SelectItem>
-                    {cohorts.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Refresh Button */}
-              <div>
-                <label className="text-sm font-medium mb-2 block opacity-0">Actions</label>
+            {/* Refresh Button */}
+            <div>
+              <label className="text-sm font-medium mb-2 block opacity-0">Actions</label>
                 <Button
                   onClick={handleRefresh}
                   disabled={refreshing}

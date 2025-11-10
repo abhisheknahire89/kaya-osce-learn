@@ -441,16 +441,6 @@ const GenerateCase = () => {
         isApproving={isApproving}
         showAssignButton={!!approvedCaseId}
       />
-
-      {/* Assign Modal */}
-      {approvedCaseId && (
-        <AssignCohortModal
-          isOpen={showAssignModal}
-          onClose={() => setShowAssignModal(false)}
-          caseId={approvedCaseId}
-          onAssignComplete={handleAssignComplete}
-        />
-      )}
       </div>
     </>
   );

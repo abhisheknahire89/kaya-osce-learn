@@ -317,23 +317,7 @@ const FacultyDashboard = () => {
                 setShowPreviewModal(false);
                 setSelectedCase(null);
               }}
-              showAssignButton={false}
-            />
-            <AssignCohortModal
-              isOpen={showAssignModal}
-              onClose={() => {
-                setShowAssignModal(false);
-                setSelectedCase(null);
-              }}
-              caseId={selectedCase.id}
-              onAssignComplete={() => {
-                toast({
-                  title: "Success",
-                  description: "Case assigned to cohort successfully",
-                });
-                setShowAssignModal(false);
-                setSelectedCase(null);
-              }}
+              showAssignButton={true}
             />
           </>
         )}

@@ -163,7 +163,8 @@ Output ONLY the JSON object, no markdown formatting.`;
           }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 4096,
+            maxOutputTokens: 8192, // Increased for complex cases
+            responseMimeType: "application/json", // Request JSON directly
           },
         }),
       });

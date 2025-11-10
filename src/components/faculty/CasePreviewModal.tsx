@@ -6,31 +6,120 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Check, X, ChevronDown, Code2 } from "lucide-react";
+import { Check, X, ChevronDown, Code2, Calendar } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 interface CasePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   caseData: any;
   previewText?: string;
-  onApprove: () => void;
-  onAssign?: () => void;
+  onApproveSuccess?: (caseId: string) => void;
   isApproving?: boolean;
-  showAssignButton?: boolean;
+  userId?: string;
+  viewOnly?: boolean;
 }
 export const CasePreviewModal = ({
   isOpen,
   onClose,
   caseData,
   previewText,
-  onApprove,
-  onAssign,
+  onApproveSuccess,
   isApproving = false,
-  showAssignButton = false
+  userId,
+  viewOnly = false
 }: CasePreviewModalProps) => {
+  const { toast } = useToast();
   const [hasReviewed, setHasReviewed] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [approvedCaseId, setApprovedCaseId] = useState<string | null>(null);
+  const [deadline, setDeadline] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [localIsApproving, setLocalIsApproving] = useState(false);
+
+  const handleApprove = async () => {
+    if (!caseData || !userId) return;
+
+    setLocalIsApproving(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("approve_case", {
+        body: {
+          case_id: caseData.id,
+          clinical_json: caseData,
+          faculty_id: userId,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      setApprovedCaseId(data.case_id);
+      setIsApproved(true);
+      
+      toast({
+        title: "Case approved successfully",
+        description: "Now set a deadline and assign to students",
+      });
+    } catch (error: any) {
+      console.error("Error approving case:", error);
+      toast({
+        title: "Approval failed",
+        description: error.message || "Failed to approve case. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLocalIsApproving(false);
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!deadline) {
+      toast({
+        title: "Deadline required",
+        description: "Please set a deadline for this assignment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!approvedCaseId) return;
+
+    setIsAssigning(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("assign_case", {
+        body: {
+          case_id: approvedCaseId,
+          deadline_at: new Date(deadline).toISOString(),
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "Case assigned successfully",
+        description: "Students can now access this case",
+      });
+
+      onApproveSuccess(approvedCaseId);
+    } catch (error: any) {
+      console.error("Error assigning case:", error);
+      toast({
+        title: "Assignment failed",
+        description: error.message || "Failed to assign case. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   if (!caseData) return null;
   return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh]">
@@ -45,13 +134,15 @@ export const CasePreviewModal = ({
 
         <ScrollArea className="h-[65vh] pr-4">
           <div className="space-y-4">
-            {/* Review Confirmation */}
-            <div className="flex items-center space-x-2 bg-accent/20 p-3 rounded-lg sticky top-0 z-10 backdrop-blur-sm">
-              <Checkbox id="review-confirm" checked={hasReviewed} onCheckedChange={checked => setHasReviewed(checked as boolean)} className="min-h-[44px] min-w-[44px]" />
-              <Label htmlFor="review-confirm" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
-                I have reviewed this case and confirm it is ready for approval
-              </Label>
-            </div>
+            {/* Review Confirmation - only show if not view only */}
+            {!viewOnly && (
+              <div className="flex items-center space-x-2 bg-accent/20 p-3 rounded-lg sticky top-0 z-10 backdrop-blur-sm">
+                <Checkbox id="review-confirm" checked={hasReviewed} onCheckedChange={checked => setHasReviewed(checked as boolean)} className="min-h-[44px] min-w-[44px]" />
+                <Label htmlFor="review-confirm" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+                  I have reviewed this case and confirm it is ready for approval
+                </Label>
+              </div>
+            )}
             {/* Case Title and Metadata Tiles */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="border-primary/20">
@@ -333,23 +424,67 @@ export const CasePreviewModal = ({
           </div>
         </ScrollArea>
 
-        {/* Action Buttons */}
-        <div className="pt-4 border-t">
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} disabled={isApproving} className="flex-1 rounded-xl">
-              <X className="mr-2 h-4 w-4" />
-              Cancel
+        {/* Action Buttons or Assignment Section */}
+        <div className="pt-4 border-t space-y-4">
+          {viewOnly ? (
+            <Button onClick={onClose} className="w-full rounded-xl">
+              Close
             </Button>
-            
-            {!showAssignButton ? <Button onClick={onApprove} disabled={!hasReviewed || isApproving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-[#7AA86E] text-white">
-                {isApproving ? <>Approving...</> : <>
+          ) : !isApproved ? (
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={onClose} disabled={localIsApproving} className="flex-1 rounded-xl">
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+              
+              <Button 
+                onClick={handleApprove} 
+                disabled={!hasReviewed || localIsApproving} 
+                className="flex-1 rounded-xl bg-gradient-to-r from-primary to-[#7AA86E] text-white"
+              >
+                {localIsApproving ? "Approving..." : (
+                  <>
                     <Check className="mr-2 h-4 w-4" />
                     Approve
-                  </>}
-              </Button> : <Button onClick={onAssign} className="flex-1 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E5A1] text-foreground">
-                Assign to Cohort
-              </Button>}
-          </div>
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="deadline">Set Deadline *</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="deadline"
+                    type="datetime-local"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Students must complete the case before this deadline
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={onClose} disabled={isAssigning} className="flex-1 rounded-xl">
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+                
+                <Button 
+                  onClick={handleAssign} 
+                  disabled={!deadline || isAssigning} 
+                  className="flex-1 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E5A1] text-foreground"
+                >
+                  {isAssigning ? "Assigning..." : "Assign to Students"}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>;

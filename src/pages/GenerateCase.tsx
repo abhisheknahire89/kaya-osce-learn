@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
 import { LoadingWithFacts } from "@/components/faculty/LoadingWithFacts";
-import { AssignmentModal } from "@/components/faculty/AssignmentModal";
+
 
 const SUBJECTS = [
   "Kayachikitsa",
@@ -162,51 +162,9 @@ const GenerateCase = () => {
     }
   };
 
-  const handleApprove = async () => {
-    if (!generatedCase || !user) return;
-
-    setIsApproving(true);
-
-    try {
-      // Call approve_case edge function
-      const { data, error } = await supabase.functions.invoke("approve_case", {
-        body: {
-          case_id: generatedCase.id,
-          clinical_json: generatedCase,
-          faculty_id: user.id,
-        },
-      });
-
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-
-      setApprovedCaseId(data.case_id);
-      
-      toast({
-        title: "Case approved successfully",
-        description: "Now assign it to students",
-      });
-
-      // Close preview and open assign modal
-      setShowPreview(false);
-      setShowAssignModal(true);
-    } catch (error: any) {
-      console.error("Error approving case:", error);
-      toast({
-        title: "Approval failed",
-        description: error.message || "Failed to approve case. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsApproving(false);
-    }
-  };
-
-  const handleAssignComplete = () => {
-    setShowAssignModal(false);
+  const handleApproveSuccess = (caseId: string) => {
+    setShowPreview(false);
     setGeneratedCase(null);
-    setApprovedCaseId(null);
-    setDeadline("");
     navigate("/faculty");
   };
 
@@ -415,16 +373,7 @@ const GenerateCase = () => {
                       onClick={() => setShowPreview(true)}
                     >
                       <Eye className="mr-2 h-4 w-4" />
-                      Full Preview
-                    </Button>
-                    <Button
-                      className="flex-1 rounded-2xl bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                      size="sm"
-                      onClick={handleApprove}
-                      disabled={isApproving}
-                    >
-                      <Check className="mr-2 h-4 w-4" />
-                      {isApproving ? "Approving..." : "Approve & Publish"}
+                      Preview & Approve
                     </Button>
                   </div>
                 </CardContent>
@@ -440,20 +389,10 @@ const GenerateCase = () => {
         onClose={() => setShowPreview(false)}
         caseData={generatedCase}
         previewText={previewText}
-        onApprove={handleApprove}
+        onApproveSuccess={handleApproveSuccess}
         isApproving={isApproving}
-        showAssignButton={false}
+        userId={user?.id || ""}
       />
-
-      {/* Assignment Modal */}
-      {showAssignModal && approvedCaseId && (
-        <AssignmentModal
-          isOpen={showAssignModal}
-          onClose={() => setShowAssignModal(false)}
-          caseId={approvedCaseId}
-          onSuccess={handleAssignComplete}
-        />
-      )}
       </div>
     </>
   );

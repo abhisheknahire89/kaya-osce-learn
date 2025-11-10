@@ -142,11 +142,7 @@ const FacultyLibrary = () => {
                 setSelectedCase(null);
               }}
               caseData={selectedCase.clinical_json}
-              onApprove={() => {
-                setShowPreviewModal(false);
-                setSelectedCase(null);
-              }}
-              showAssignButton={true}
+              viewOnly={true}
             />
           </>
         )}

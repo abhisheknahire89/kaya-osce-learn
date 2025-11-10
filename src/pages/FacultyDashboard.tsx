@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
+import { AssignCohortModal } from "@/components/faculty/AssignCohortModal";
 
 const FacultyDashboard = () => {
   const { toast } = useToast();
@@ -19,6 +21,9 @@ const FacultyDashboard = () => {
     approvedCases: 0,
     avgCompletion: 0,
   });
+  const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   useEffect(() => {
     fetchCases();
@@ -121,17 +126,23 @@ const FacultyDashboard = () => {
                 <span>Generate New Case</span>
               </Link>
             </Button>
-            <Button variant="outline" className="h-24 flex-col gap-2 rounded-2xl hover-scale">
-              <FileText className="h-6 w-6" />
-              <span>View All Cases</span>
+            <Button asChild variant="outline" className="h-24 flex-col gap-2 rounded-2xl hover-scale">
+              <Link to="/faculty/library">
+                <FileText className="h-6 w-6" />
+                <span>View All Cases</span>
+              </Link>
             </Button>
-            <Button variant="outline" className="h-24 flex-col gap-2 rounded-2xl hover-scale">
-              <Users className="h-6 w-6" />
-              <span>Manage Students</span>
+            <Button asChild variant="outline" className="h-24 flex-col gap-2 rounded-2xl hover-scale">
+              <Link to="/admin">
+                <Users className="h-6 w-6" />
+                <span>Manage Students</span>
+              </Link>
             </Button>
-            <Button variant="outline" className="h-24 flex-col gap-2 rounded-2xl hover-scale">
-              <BarChart3 className="h-6 w-6" />
-              <span>View Analytics</span>
+            <Button asChild variant="outline" className="h-24 flex-col gap-2 rounded-2xl hover-scale">
+              <Link to="/faculty/analytics">
+                <BarChart3 className="h-6 w-6" />
+                <span>View Analytics</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -177,8 +188,8 @@ const FacultyDashboard = () => {
               Approved Cases
               <span className="ml-2 text-sm text-muted-foreground" lang="hi">स्वीकृत केस</span>
             </h2>
-            <Button variant="outline" size="sm" className="rounded-xl">
-              View All
+            <Button asChild variant="outline" size="sm" className="rounded-xl">
+              <Link to="/faculty/library">View All</Link>
             </Button>
           </div>
 
@@ -255,6 +266,10 @@ const FacultyDashboard = () => {
                         size="sm"
                         variant="outline"
                         className="rounded-xl flex-1 group-hover:bg-accent"
+                        onClick={() => {
+                          setSelectedCase(caseItem);
+                          setShowPreviewModal(true);
+                        }}
                       >
                         <Eye className="mr-1 h-3 w-3" />
                         View
@@ -263,6 +278,10 @@ const FacultyDashboard = () => {
                         size="sm"
                         variant="outline"
                         className="rounded-xl flex-1 group-hover:bg-accent"
+                        onClick={() => {
+                          setSelectedCase(caseItem);
+                          setShowAssignModal(true);
+                        }}
                       >
                         <Edit className="mr-1 h-3 w-3" />
                         Edit
@@ -271,8 +290,11 @@ const FacultyDashboard = () => {
                         size="sm"
                         variant="outline"
                         className="rounded-xl group-hover:bg-accent"
+                        asChild
                       >
-                        <TrendingUp className="h-3 w-3" />
+                        <Link to="/faculty/analytics">
+                          <TrendingUp className="h-3 w-3" />
+                        </Link>
                       </Button>
                     </div>
                   </CardContent>
@@ -281,6 +303,41 @@ const FacultyDashboard = () => {
             </div>
           )}
         </div>
+
+        {/* Modals */}
+        {selectedCase && (
+          <>
+            <CasePreviewModal
+              isOpen={showPreviewModal}
+              onClose={() => {
+                setShowPreviewModal(false);
+                setSelectedCase(null);
+              }}
+              caseData={selectedCase.clinical_json}
+              onApprove={() => {
+                setShowPreviewModal(false);
+                setSelectedCase(null);
+              }}
+              showAssignButton={false}
+            />
+            <AssignCohortModal
+              isOpen={showAssignModal}
+              onClose={() => {
+                setShowAssignModal(false);
+                setSelectedCase(null);
+              }}
+              caseId={selectedCase.id}
+              onAssignComplete={() => {
+                toast({
+                  title: "Success",
+                  description: "Case assigned to cohort successfully",
+                });
+                setShowAssignModal(false);
+                setSelectedCase(null);
+              }}
+            />
+          </>
+        )}
       </div>
     </div>
   );

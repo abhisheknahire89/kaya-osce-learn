@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
 import { LoadingWithFacts } from "@/components/faculty/LoadingWithFacts";
+import { AssignCohortModal } from "@/components/faculty/AssignCohortModal";
 
 const SUBJECTS = [
   "Kayachikitsa",
@@ -56,8 +57,11 @@ const GenerateCase = () => {
   const [specialModality, setSpecialModality] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCase, setGeneratedCase] = useState<any>(null);
+  const [previewText, setPreviewText] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  const [approvedCaseId, setApprovedCaseId] = useState<string | null>(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
   const handleGenerate = async () => {
     if (!subject || !sloIds || !millerLevel || !bloomDomain) {
@@ -139,6 +143,7 @@ const GenerateCase = () => {
       }
 
       setGeneratedCase(data.case);
+      setPreviewText(data.previewText || "");
       toast({
         title: "Case generated successfully",
         description: "Review and approve to publish",
@@ -161,39 +166,27 @@ const GenerateCase = () => {
     setIsApproving(true);
 
     try {
-      // Insert case into database
-      const { data: caseData, error: caseError } = await supabase
-        .from("cases")
-        .insert({
-          slug: generatedCase.slug,
-          title: generatedCase.title,
-          subject: generatedCase.subject,
-          difficulty: getDifficultyLabel(),
+      // Call approve_case edge function
+      const { data, error } = await supabase.functions.invoke("approve_case", {
+        body: {
+          case_id: generatedCase.id,
           clinical_json: generatedCase,
-          created_by: user.id,
-          status: "approved",
-          cbdc_tags: {
-            competencyIds: generatedCase.competencyIds,
-            sloIds: generatedCase.sloIds,
-            millerLevel: generatedCase.millerLevel,
-            bloomDomain: generatedCase.bloomDomain,
-          },
-        })
-        .select()
-        .single();
-
-      if (caseError) throw caseError;
-
-      toast({
-        title: "Case approved successfully",
-        description: "The case is now available for assignment",
+          faculty_id: user.id,
+        },
       });
 
-      setShowPreview(false);
-      setGeneratedCase(null);
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      setApprovedCaseId(data.case_id);
       
-      // Navigate back to faculty dashboard
-      navigate("/faculty");
+      toast({
+        title: "Case approved successfully",
+        description: "Now assign it to a cohort",
+      });
+
+      // Show assign button in preview modal
+      setShowPreview(true);
     } catch (error: any) {
       console.error("Error approving case:", error);
       toast({
@@ -204,6 +197,18 @@ const GenerateCase = () => {
     } finally {
       setIsApproving(false);
     }
+  };
+
+  const handleOpenAssignModal = () => {
+    setShowPreview(false);
+    setShowAssignModal(true);
+  };
+
+  const handleAssignComplete = () => {
+    setShowAssignModal(false);
+    setGeneratedCase(null);
+    setApprovedCaseId(null);
+    navigate("/faculty");
   };
 
   const getDifficultyLabel = () => {
@@ -430,9 +435,22 @@ const GenerateCase = () => {
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
         caseData={generatedCase}
+        previewText={previewText}
         onApprove={handleApprove}
+        onAssign={handleOpenAssignModal}
         isApproving={isApproving}
+        showAssignButton={!!approvedCaseId}
       />
+
+      {/* Assign Modal */}
+      {approvedCaseId && (
+        <AssignCohortModal
+          isOpen={showAssignModal}
+          onClose={() => setShowAssignModal(false)}
+          caseId={approvedCaseId}
+          onAssignComplete={handleAssignComplete}
+        />
+      )}
       </div>
     </>
   );

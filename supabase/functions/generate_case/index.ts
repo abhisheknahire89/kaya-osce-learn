@@ -7,6 +7,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Generate human-readable preview overview (transient, not stored)
+function generatePreviewOverview(caseData: any): string {
+  const rubricHighlights = caseData.rubric
+    ?.slice(0, 3)
+    ?.map((section: any, idx: number) => {
+      const firstItem = section.items?.[0];
+      return `${idx + 1}. ${section.section}: ${firstItem?.text || 'N/A'} (${section.max} pts)`;
+    })
+    .join('\n') || 'No rubric items';
+
+  const mcqStems = caseData.mcqs
+    ?.slice(0, 3)
+    ?.map((mcq: any, idx: number) => `${idx + 1}. ${mcq.stem}`)
+    .join('\n') || 'No MCQs';
+
+  return `
+**Title:** ${caseData.title}
+**Subject:** ${caseData.subject}
+**Duration:** ${caseData.durationMinutes} minutes
+**Miller Level:** ${caseData.millerLevel}
+**Bloom Domain:** ${caseData.bloomDomain}
+
+**Competency IDs:** ${caseData.competencyIds?.join(', ') || 'None'}
+**SLO IDs:** ${caseData.sloIds?.join(', ') || 'None'}
+
+**Patient Stem:**
+${caseData.stem}
+
+**Top Rubric Highlights:**
+${rubricHighlights}
+
+**MCQ Count:** ${caseData.mcqs?.length || 0}
+**Sample MCQ Stems:**
+${mcqStems}
+
+**Notes for Faculty:** Review Nadi triggers and test mappings for clinical accuracy.
+`.trim();
+}
+
 // Generation parameters schema
 const GenerateCaseParamsSchema = z.object({
   subject: z.string(),
@@ -260,23 +299,15 @@ Output ONLY the JSON object, no markdown formatting.`;
       throw new Error('Failed to generate valid case');
     }
 
+    // Generate transient preview overview (NOT stored in DB)
+    const previewText = generatePreviewOverview(generatedCase);
+
     return new Response(
       JSON.stringify({
         success: true,
         case: generatedCase,
-        preview: {
-          id: generatedCase.id,
-          title: generatedCase.title,
-          subject: generatedCase.subject,
-          durationMinutes: generatedCase.durationMinutes,
-          patientStem: generatedCase.stem,
-          topRubricItems: generatedCase.rubric
-            .flatMap((section: any) => section.items || [])
-            .slice(0, 3)
-            .map((item: any) => item.text),
-          competencyIds: generatedCase.competencyIds || [],
-          rawJson: generatedCase,
-        },
+        previewText: previewText,
+        rawModelOutputId: `model-out-${Date.now()}`,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

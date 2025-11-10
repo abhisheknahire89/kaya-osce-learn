@@ -40,10 +40,67 @@ serve(async (req) => {
       throw new Error('Unauthorized: Faculty role required');
     }
 
-    const { case_id } = await req.json();
+    const { case_id, clinical_json, faculty_id } = await req.json();
     console.log('Approving case:', case_id, 'by faculty:', user.id);
 
-    // Verify case exists and belongs to faculty
+    // If clinical_json provided, this is a new case to insert
+    if (clinical_json) {
+      // Insert new case
+      const { data: newCase, error: insertError } = await supabase
+        .from('cases')
+        .insert({
+          slug: clinical_json.slug,
+          title: clinical_json.title,
+          subject: clinical_json.subject,
+          difficulty: 'Medium', // Default or compute from params
+          clinical_json: clinical_json,
+          created_by: user.id,
+          status: 'approved',
+          cbdc_tags: {
+            competencyIds: clinical_json.competencyIds,
+            sloIds: clinical_json.sloIds,
+            millerLevel: clinical_json.millerLevel,
+            bloomDomain: clinical_json.bloomDomain,
+          },
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Create initial version
+      const { error: versionError } = await supabase
+        .from('case_versions')
+        .insert({
+          case_id: newCase.id,
+          version: 1,
+          clinical_json: clinical_json,
+          change_log: 'Initial approval',
+        });
+
+      if (versionError) {
+        console.error('Version creation error:', versionError);
+      }
+
+      // Log event
+      console.log('Event: case_approved', {
+        actor: user.id,
+        case_id: newCase.id,
+        timestamp: new Date().toISOString(),
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          case_id: newCase.id,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Otherwise, update existing case
     const { data: caseData, error: caseError } = await supabase
       .from('cases')
       .select('*')

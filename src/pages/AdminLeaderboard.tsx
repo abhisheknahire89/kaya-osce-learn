@@ -21,6 +21,7 @@ const AdminLeaderboard = () => {
     return yesterday.toISOString().split('T')[0];
   });
   const [cohortId, setCohortId] = useState<string>('all');
+  const [cohorts, setCohorts] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,8 +32,23 @@ const AdminLeaderboard = () => {
   const [studentModalOpen, setStudentModalOpen] = useState(false);
 
   useEffect(() => {
+    fetchCohorts();
     fetchLeaderboard();
   }, [period, date, cohortId, page]);
+
+  const fetchCohorts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cohorts')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setCohorts(data || []);
+    } catch (error: any) {
+      console.error('Error fetching cohorts:', error);
+    }
+  };
 
   const fetchLeaderboard = async () => {
     try {
@@ -213,11 +229,30 @@ const AdminLeaderboard = () => {
                   onChange={(e) => setDate(e.target.value)}
                   className="rounded-xl"
                 />
-            </div>
+              </div>
 
-            {/* Refresh Button */}
-            <div>
-              <label className="text-sm font-medium mb-2 block opacity-0">Actions</label>
+              {/* Cohort Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  Cohort
+                </label>
+                <Select value={cohortId} onValueChange={setCohortId}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="All cohorts" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All cohorts</SelectItem>
+                    {cohorts.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Refresh Button */}
+              <div>
+                <label className="text-sm font-medium mb-2 block opacity-0">Actions</label>
                 <Button
                   onClick={handleRefresh}
                   disabled={refreshing}

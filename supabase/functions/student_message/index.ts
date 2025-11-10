@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not configured');
+    const GEMINI_VP_API_KEY = Deno.env.get('GEMINI_VP_API_KEY');
+    if (!GEMINI_VP_API_KEY) {
+      throw new Error('GEMINI_VP_API_KEY is not configured');
     }
 
     const { run_id, message, conversationHistory, caseData } = await req.json();
@@ -66,7 +66,7 @@ Remember: Stay in character as the patient. Keep responses brief and natural.`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY,
+        'x-goog-api-key': GEMINI_VP_API_KEY,
       },
       body: JSON.stringify({
         contents: messages,

@@ -163,6 +163,35 @@ Required JSON structure:
     "labsOnOrder": { "test": "result" pairs },
     "dynamicTriggers": { "trigger": ["responses"] }
   },
+  "diagnosisOptions": [
+    {
+      "id": "D1",
+      "text": "Primary diagnosis name (e.g., Pittaja Jwara)",
+      "hint": "Brief clinical reasoning",
+      "isCorrect": true,
+      "sloIds": ["relevant SLO IDs"]
+    },
+    {
+      "id": "D2",
+      "text": "First differential diagnosis name",
+      "hint": "Why it's a differential",
+      "isCorrect": false,
+      "sloIds": ["relevant SLO IDs"]
+    },
+    {
+      "id": "D3",
+      "text": "Second differential diagnosis name",
+      "hint": "Clinical reasoning",
+      "isCorrect": false,
+      "sloIds": ["relevant SLO IDs"]
+    },
+    {
+      "id": "D4",
+      "text": "Other (enter diagnosis below)",
+      "hint": "Free-text diagnosis option",
+      "isCorrect": false
+    }
+  ],
   "rubric": [
     {
       "section": "section name",

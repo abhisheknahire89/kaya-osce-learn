@@ -37,31 +37,28 @@ serve(async (req) => {
 
     console.log('Starting simulation for assignment:', assignment_id);
 
-    // Fetch assignment and case data
+    // Fetch assignment data
     const { data: assignment, error: assignError } = await supabase
       .from('assignments')
-      .select(`
-        id,
-        case_id,
-        time_limit,
-        cases (
-          id,
-          clinical_json
-        )
-      `)
+      .select('id, case_id, time_limit')
       .eq('id', assignment_id)
       .single();
 
     if (assignError) throw assignError;
     if (!assignment) throw new Error('Assignment not found');
+    if (!assignment.case_id) throw new Error('No case associated with assignment');
 
-    // @ts-ignore - Supabase returns cases as array from join
-    const cases = assignment.cases;
-    if (!cases || !Array.isArray(cases) || cases.length === 0) {
-      throw new Error('Case data not found');
-    }
+    // Fetch case data separately
+    const { data: caseRecord, error: caseError } = await supabase
+      .from('cases')
+      .select('id, clinical_json')
+      .eq('id', assignment.case_id)
+      .single();
+
+    if (caseError) throw caseError;
+    if (!caseRecord) throw new Error('Case data not found');
     
-    const caseData = cases[0].clinical_json as any;
+    const caseData = caseRecord.clinical_json as any;
     const runId = crypto.randomUUID();
     const startTime = new Date().toISOString();
 

@@ -1,4 +1,4 @@
-import { Home, Clipboard, PlusCircle, BarChart3, User } from "lucide-react";
+import { Home, Clipboard, PlusCircle, BarChart3, User, Users } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,11 +19,19 @@ const facultyNavItems = [
   { key: "profile", label: "Profile", icon: User, route: "/faculty/profile" },
 ];
 
+const adminNavItems = [
+  { key: "home", label: "Dashboard", icon: Home, route: "/admin" },
+  { key: "students", label: "Students", icon: Users, route: "/admin/students" },
+  { key: "cases", label: "Cases", icon: Clipboard, route: "/faculty" },
+  { key: "analytics", label: "Analytics", icon: BarChart3, route: "/admin/analytics" },
+  { key: "profile", label: "Profile", icon: User, route: "/admin/profile" },
+];
+
 export const BottomNav = () => {
   const location = useLocation();
   const { role } = useAuth();
   
-  const navItems = role === "faculty" ? facultyNavItems : studentNavItems;
+  const navItems = role === "admin" ? adminNavItems : role === "faculty" ? facultyNavItems : studentNavItems;
   
   // Don't show bottom nav on auth pages or simulation screens
   if (location.pathname === "/" || location.pathname === "/auth" || location.pathname.includes("/simulation/")) {

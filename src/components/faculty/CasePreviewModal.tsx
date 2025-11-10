@@ -260,13 +260,40 @@ export const CasePreviewModal = ({
               </CardContent>
             </Card>
 
-            {/* Diagnosis MCQ Options */}
-            {caseData?.mcqs && (() => {
-              const diagnosisMcqs = caseData.mcqs.filter((mcq: any) => 
-                mcq.stem?.toLowerCase().includes('diagnosis') || 
+            {/* Diagnosis Options (prefer explicit options, fallback to MCQ) */}
+            {(() => {
+              if (caseData?.diagnosisOptions?.length) {
+                return (
+                  <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-900">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Check className="h-5 w-5 text-green-600" />
+                        Diagnosis Options
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 ml-1">
+                      {caseData.diagnosisOptions.map((opt: any, idx: number) => (
+                        <div
+                          key={opt.id || idx}
+                          className={`text-sm flex items-center gap-2 p-2 rounded ${
+                            opt.isCorrect ? "bg-green-100 dark:bg-green-900/30 font-medium" : ""
+                          }`}
+                        >
+                          {opt.isCorrect && <Check className="h-4 w-4 text-green-600 flex-shrink-0" />}
+                          <span>{String.fromCharCode(65 + idx)}. {opt.text}</span>
+                          {opt.hint && <span className="text-muted-foreground ml-2">({opt.hint})</span>}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              const diagnosisMcqs = caseData?.mcqs?.filter((mcq: any) =>
+                mcq.stem?.toLowerCase().includes('diagnosis') ||
                 mcq.stem?.toLowerCase().includes('diagnose') ||
                 mcq.stem?.toLowerCase().includes('most likely')
-              );
+              ) || [];
               if (!diagnosisMcqs.length) return null;
               
               return (
@@ -283,11 +310,11 @@ export const CasePreviewModal = ({
                         <p className="font-medium text-sm">{mcq.stem}</p>
                         <div className="ml-4 space-y-1.5">
                           {mcq.choices?.map((choice: string, choiceIdx: number) => (
-                            <div 
-                              key={choiceIdx} 
+                            <div
+                              key={choiceIdx}
                               className={`text-sm flex items-center gap-2 p-2 rounded ${
-                                choiceIdx === mcq.correctIndex 
-                                  ? "bg-green-100 dark:bg-green-900/30 font-medium" 
+                                choiceIdx === mcq.correctIndex
+                                  ? "bg-green-100 dark:bg-green-900/30 font-medium"
                                   : ""
                               }`}
                             >
@@ -307,13 +334,40 @@ export const CasePreviewModal = ({
               );
             })()}
 
-            {/* Management Plan MCQ Options */}
-            {caseData?.mcqs && (() => {
-              const managementMcqs = caseData.mcqs.filter((mcq: any) => 
+            {/* Management Plan Options (prefer explicit options, fallback to MCQ) */}
+            {(() => {
+              if (caseData?.managementOptions?.length) {
+                return (
+                  <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Check className="h-5 w-5 text-blue-600" />
+                        Management Plan Options
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 ml-1">
+                      {caseData.managementOptions.map((opt: any, idx: number) => (
+                        <div
+                          key={opt.id || idx}
+                          className={`text-sm flex items-center gap-2 p-2 rounded ${
+                            opt.isCorrect ? "bg-blue-100 dark:bg-blue-900/30 font-medium" : ""
+                          }`}
+                        >
+                          {opt.isCorrect && <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />}
+                          <span>{String.fromCharCode(65 + idx)}. {opt.text}</span>
+                          {opt.hint && <span className="text-muted-foreground ml-2">({opt.hint})</span>}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              const managementMcqs = caseData?.mcqs?.filter((mcq: any) => 
                 mcq.stem?.toLowerCase().includes('management') || 
                 mcq.stem?.toLowerCase().includes('treatment') ||
                 mcq.stem?.toLowerCase().includes('therapy')
-              );
+              ) || [];
               if (!managementMcqs.length) return null;
               
               return (

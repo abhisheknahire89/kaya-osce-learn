@@ -83,6 +83,8 @@ const ClinicalCaseSchema = z.object({
   script: z.any(),
   rubric: z.array(z.any()),
   mcqs: z.array(z.any()),
+  diagnosisOptions: z.array(z.any()).optional(),
+  managementOptions: z.array(z.any()).optional(),
   metadata: z.any(),
 });
 
@@ -126,7 +128,7 @@ Examples:
 - Rubric item: "Correctly identifies Kapha-Vata imbalance as primary pathology [file-CHARAKA-SAMHITA]"
 - MCQ rationale: "This presentation indicates Tamaka Shwasa due to episodic dyspnoea and wheezing, classically aggravated by cold."`;
 
-    const userPrompt = `Create a ClinicalCase JSON object with these parameters:
+const userPrompt = `Create a ClinicalCase JSON object with these parameters:
 - subject: ${params.subject}
 - sloIds: ${params.sloIds.join(", ")}
 - millerLevel: ${params.millerLevel}
@@ -144,6 +146,13 @@ ${params.ayurvedicContext?.specialModality ? `- specialModality: ${params.ayurve
 - Option D3 (isCorrect: false): Second differential with specific name (e.g., "Viral Fever with Pitta aggravation")
 - Option D4 (isCorrect: false): Always "Other (enter diagnosis below)"
 NEVER use generic placeholders like "Primary diagnosis" or "Alternative diagnosis 1".
+
+**CRITICAL FOR MANAGEMENT OPTIONS**: You MUST generate exactly 4 initial management plan options:
+- Option M1 (isCorrect: true): The CORRECT best initial management/treatment for this case
+- Option M2 (isCorrect: false): A plausible but suboptimal option commonly confused
+- Option M3 (isCorrect: false): Another plausible but incorrect option
+- Option M4 (isCorrect: false): "Other (enter plan below)"
+Each option should be concise, clinically realistic, and aligned to the case context.
 
 Required JSON structure:
 {
@@ -196,6 +205,33 @@ Required JSON structure:
       "id": "D4",
       "text": "Other (enter diagnosis below)",
       "hint": "Free-text diagnosis if none above fit",
+      "isCorrect": false
+    }
+  ],
+  "managementOptions": [
+    {
+      "id": "M1",
+      "text": "The best initial management option specific to this case",
+      "hint": "Aligned with key findings and safety",
+      "isCorrect": true,
+      "sloIds": ["relevant SLO IDs"]
+    },
+    {
+      "id": "M2",
+      "text": "Plausible but suboptimal management option",
+      "hint": "Commonly selected but not ideal",
+      "isCorrect": false
+    },
+    {
+      "id": "M3",
+      "text": "Another plausible but incorrect option",
+      "hint": "Not recommended for initial management",
+      "isCorrect": false
+    },
+    {
+      "id": "M4",
+      "text": "Other (enter plan below)",
+      "hint": "Free-text plan if none above fit",
       "isCorrect": false
     }
   ],

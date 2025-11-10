@@ -7,14 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/faculty/DashboardHeader";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
-import { COHORTS } from "@/constants/cohorts";
 
 const AdminAnalytics = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d');
-  const cohorts = COHORTS;
-  const [selectedCohort, setSelectedCohort] = useState<string>('all');
   const [analytics, setAnalytics] = useState({
     performanceBySubject: [] as any[],
     scoreDistribution: [] as any[],

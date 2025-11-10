@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,15 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { COHORTS } from "@/constants/cohorts";
 
 export const AuthForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<"faculty" | "student" | "admin">("student");
-  const [cohortId, setCohortId] = useState<string>("");
-  const cohorts = COHORTS;
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,17 +24,6 @@ export const AuthForm = () => {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
-
-    // Validate cohort for students
-    if (role === "student" && !cohortId) {
-      toast({
-        title: "Cohort required",
-        description: "Please select your cohort",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -54,19 +40,13 @@ export const AuthForm = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Create profile with cohort metadata for students
-        const profileData: any = {
-          id: data.user.id,
-          name,
-        };
-
-        if (role === "student" && cohortId) {
-          profileData.metadata = { cohort_id: cohortId };
-        }
-
+        // Create profile
         const { error: profileError } = await supabase
           .from("profiles")
-          .insert(profileData);
+          .insert({
+            id: data.user.id,
+            name,
+          });
 
         if (profileError) throw profileError;
 
@@ -144,7 +124,6 @@ export const AuthForm = () => {
         
         if (insertError) {
           console.error("Role insert error:", insertError);
-          // Continue anyway, we'll handle missing role on the dashboard
         }
 
         // Also create profile if it doesn't exist
@@ -286,23 +265,6 @@ export const AuthForm = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {role === "student" && (
-                <div className="space-y-2">
-                  <Label htmlFor="cohort">Cohort / समूह</Label>
-                  <Select value={cohortId} onValueChange={setCohortId}>
-                    <SelectTrigger id="cohort" className="rounded-xl">
-                      <SelectValue placeholder="Select your cohort" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cohorts.map((cohort) => (
-                        <SelectItem key={cohort.id} value={cohort.id}>
-                          {cohort.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               <Button
                 type="submit"
                 disabled={isLoading}
@@ -314,7 +276,7 @@ export const AuthForm = () => {
                     Creating account...
                   </>
                 ) : (
-                  "Create Account"
+                  "Sign Up"
                 )}
               </Button>
             </form>

@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
-import { AssignCohortModal } from "@/components/faculty/AssignCohortModal";
 
 const FacultyDashboard = () => {
   const { toast } = useToast();

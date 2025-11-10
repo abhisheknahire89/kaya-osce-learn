@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/faculty/DashboardHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { COHORTS } from "@/constants/cohorts";
 
 const AdminLeaderboard = () => {
   const { toast } = useToast();
@@ -22,7 +21,6 @@ const AdminLeaderboard = () => {
     return yesterday.toISOString().split('T')[0];
   });
   const [cohortId, setCohortId] = useState<string>('all');
-  const cohorts = COHORTS;
   const [metrics, setMetrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

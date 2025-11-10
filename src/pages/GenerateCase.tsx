@@ -14,7 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
 import { LoadingWithFacts } from "@/components/faculty/LoadingWithFacts";
-import { AssignCohortModal } from "@/components/faculty/AssignCohortModal";
 
 const SUBJECTS = [
   "Kayachikitsa",

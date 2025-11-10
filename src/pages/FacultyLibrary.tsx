@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { CasePreviewModal } from "@/components/faculty/CasePreviewModal";
-import { AssignCohortModal } from "@/components/faculty/AssignCohortModal";
 
 const FacultyLibrary = () => {
   const { toast } = useToast();

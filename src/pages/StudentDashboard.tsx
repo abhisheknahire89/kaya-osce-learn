@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { PlayCircle, BookOpen, Award, TrendingUp, Clock, Target, BookMarked } from "lucide-react";
+import { PlayCircle, Award, TrendingUp, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StudentHeader } from "@/components/student/StudentHeader";
-import { StudentOnboarding } from "@/components/student/StudentOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -15,166 +14,77 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const StudentDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [assignments, setAssignments] = useState<any[]>([]);
+  const [cases, setCases] = useState<any[]>([]);
   const [completedRuns, setCompletedRuns] = useState<any[]>([]);
   const [stats, setStats] = useState({
-    totalAssigned: 0,
+    totalCases: 0,
     completed: 0,
     averageScore: 0,
     completionRate: 0,
   });
   const [progressData, setProgressData] = useState<any[]>([]);
-  const [competencyMap, setCompetencyMap] = useState<Record<string, { score: number; count: number }>>({});
-  const [remediation, setRemediation] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     if (user) {
-      checkOnboardingStatus();
       fetchDashboardData();
     }
   }, [user]);
-
-  const checkOnboardingStatus = async () => {
-    if (!user) return;
-
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('metadata')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      // Check if student has selected a cohort
-      const metadata = profile?.metadata as any;
-      const hasCohort = metadata?.cohort_id;
-      
-      if (!hasCohort) {
-        setNeedsOnboarding(true);
-        setShowOnboarding(true);
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error);
-    }
-  };
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
 
-      // Fetch profile to get cohort
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("metadata")
-        .eq("id", user!.id)
-        .single();
+      // Fetch all approved cases (no cohort filtering)
+      const { data: casesData, error: casesError } = await supabase
+        .from("cases")
+        .select("*")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false });
 
-      const metadata = profile?.metadata as any;
-      const cohortId = metadata?.cohort_id as string | undefined;
+      if (casesError) throw casesError;
+      setCases(casesData || []);
 
-      if (cohortId) {
-        // Fetch assignments for user's cohort
-        const { data: assignmentsData, error: assignError } = await supabase
-          .from("assignments")
-          .select(`
-            *,
-            cases (
-              id,
-              title,
-              subject,
-              difficulty,
-              clinical_json,
-              cbdc_tags
-            )
-          `)
-          .eq("cohort_id", cohortId)
-          .order("start_at", { ascending: false });
+      // Fetch completed simulation runs
+      const { data: runsData, error: runsError } = await supabase
+        .from("simulation_runs")
+        .select("*")
+        .eq("student_id", user!.id)
+        .eq("status", "scored")
+        .order("created_at", { ascending: false });
 
-        if (assignError) throw assignError;
-        setAssignments(assignmentsData || []);
+      if (runsError) throw runsError;
+      setCompletedRuns(runsData || []);
 
-        // Fetch completed simulation runs
-        const { data: runsData, error: runsError } = await supabase
-          .from("simulation_runs")
-          .select(`
-            *,
-            assignments (
-              cases (
-                title,
-                subject,
-                cbdc_tags
-              )
-            )
-          `)
-          .eq("student_id", user!.id)
-          .eq("status", "scored")
-          .order("created_at", { ascending: false });
+      // Calculate statistics
+      const totalCases = casesData?.length || 0;
+      const completed = runsData?.length || 0;
+      const scores = runsData?.map(r => (r.score_json as any)?.percent || 0).filter(s => s > 0) || [];
+      const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
-        if (runsError) throw runsError;
-        setCompletedRuns(runsData || []);
+      setStats({
+        totalCases: totalCases,
+        completed: completed,
+        averageScore: Math.round(avgScore),
+        completionRate: totalCases > 0 ? Math.round((completed / totalCases) * 100) : 0,
+      });
 
-        // Calculate statistics
-        const total = assignmentsData?.length || 0;
-        const completed = runsData?.length || 0;
-        const scores = runsData?.map(r => (r.score_json as any)?.percent || 0).filter(s => s > 0) || [];
-        const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+      // Build progress over time data
+      const progressByDate = runsData?.reduce((acc: any, run) => {
+        const date = new Date(run.created_at).toLocaleDateString();
+        if (!acc[date]) {
+          acc[date] = { date, avgScore: 0, count: 0 };
+        }
+        acc[date].avgScore += (run.score_json as any)?.percent || 0;
+        acc[date].count += 1;
+        return acc;
+      }, {});
 
-        setStats({
-          totalAssigned: total,
-          completed: completed,
-          averageScore: Math.round(avgScore),
-          completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
-        });
-
-        // Build progress over time data
-        const progressByDate = runsData?.reduce((acc: any, run) => {
-          const date = new Date(run.created_at).toLocaleDateString();
-          if (!acc[date]) {
-            acc[date] = { date, avgScore: 0, count: 0 };
-          }
-          acc[date].avgScore += (run.score_json as any)?.percent || 0;
-          acc[date].count += 1;
-          return acc;
-        }, {});
-
-        const progressArray = Object.values(progressByDate || {}).map((p: any) => ({
-          date: p.date,
-          score: Math.round(p.avgScore / p.count),
-        }));
-        setProgressData(progressArray);
-
-        // Build competency heatmap
-        const compMap: Record<string, { score: number; count: number }> = {};
-        runsData?.forEach(run => {
-          const cbdcTags = run.assignments?.cases?.cbdc_tags as any;
-          const sloIds = cbdcTags?.sloIds || [];
-          const score = (run.score_json as any)?.percent || 0;
-          sloIds.forEach((slo: string) => {
-            if (!compMap[slo]) {
-              compMap[slo] = { score: 0, count: 0 };
-            }
-            compMap[slo].score += score;
-            compMap[slo].count += 1;
-          });
-        });
-        setCompetencyMap(compMap);
-
-        // Identify remediation topics (lowest performing SLOs)
-        const remediationTopics = Object.entries(compMap)
-          .map(([slo, data]) => ({
-            slo,
-            avgScore: Math.round(data.score / data.count),
-            attempts: data.count,
-          }))
-          .filter(t => t.avgScore < 70)
-          .sort((a, b) => a.avgScore - b.avgScore)
-          .slice(0, 5);
-        setRemediation(remediationTopics);
-      }
+      const progressArray = Object.values(progressByDate || {}).map((p: any) => ({
+        date: p.date,
+        score: Math.round(p.avgScore / p.count),
+      }));
+      setProgressData(progressArray);
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
       toast({
@@ -187,17 +97,6 @@ const StudentDashboard = () => {
     }
   };
 
-  const getTimeRemaining = (endAt: string) => {
-    const now = new Date();
-    const end = new Date(endAt);
-    const diff = end.getTime() - now.getTime();
-    if (diff <= 0) return "Expired";
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    if (days > 0) return `${days}d ${hours}h`;
-    return `${hours}h`;
-  };
-
   const getGradeBadge = (percent: number) => {
     if (percent >= 85) return { label: "Distinction", variant: "default" as const };
     if (percent >= 70) return { label: "Pass", variant: "secondary" as const };
@@ -208,15 +107,6 @@ const StudentDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <StudentHeader />
-
-      {/* Student Onboarding Modal */}
-      {showOnboarding && needsOnboarding && (
-        <StudentOnboarding
-          isOpen={showOnboarding}
-          userId={user?.id || ""}
-          userName={user?.user_metadata?.name || "Student"}
-        />
-      )}
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Progress Overview */}
@@ -246,8 +136,8 @@ const StudentDashboard = () => {
             </Card>
             <Card className="rounded-2xl border-primary/20">
               <CardHeader className="pb-3">
-                <CardDescription>Assessments Completed</CardDescription>
-                <CardTitle className="text-3xl">{stats.completed}/{stats.totalAssigned}</CardTitle>
+                <CardDescription>Cases Completed</CardDescription>
+                <CardTitle className="text-3xl">{stats.completed}/{stats.totalCases}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Progress value={stats.completionRate} className="h-2" />
@@ -255,11 +145,11 @@ const StudentDashboard = () => {
             </Card>
             <Card className="rounded-2xl border-primary/20">
               <CardHeader className="pb-3">
-                <CardDescription>Remediation Needed</CardDescription>
-                <CardTitle className="text-3xl">{remediation.length}</CardTitle>
+                <CardDescription>Available Cases</CardDescription>
+                <CardTitle className="text-3xl">{stats.totalCases}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">Topics below 70%</p>
+                <p className="text-xs text-muted-foreground">All approved cases</p>
               </CardContent>
             </Card>
           </div>
@@ -292,50 +182,45 @@ const StudentDashboard = () => {
         )}
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* Assigned Cases */}
+          {/* Available Cases */}
           <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
             <h2 className="mb-4 text-xl font-bold text-foreground flex items-center gap-2">
               <Target className="h-5 w-5" />
-              Assigned Cases
+              Available Cases
             </h2>
             <div className="space-y-4">
               {loading ? (
                 <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : assignments.length === 0 ? (
+              ) : cases.length === 0 ? (
                 <Card className="rounded-2xl">
                   <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground">No cases assigned yet</p>
+                    <p className="text-muted-foreground">No cases available yet</p>
                   </CardContent>
                 </Card>
               ) : (
-                assignments.map((assignment) => {
-                  const caseData = assignment.cases;
+                cases.slice(0, 10).map((caseItem) => {
                   return (
-                    <Card key={assignment.id} className="rounded-2xl border-primary/10 hover:shadow-md transition-shadow">
+                    <Card key={caseItem.id} className="rounded-2xl border-primary/10 hover:shadow-md transition-shadow">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <CardTitle className="text-base">{caseData?.title}</CardTitle>
-                            <CardDescription className="mt-1">{caseData?.subject}</CardDescription>
+                            <CardTitle className="text-base">{caseItem.title}</CardTitle>
+                            <CardDescription className="mt-1">{caseItem.subject}</CardDescription>
                           </div>
                           <Badge variant="secondary" className="rounded-full">
-                            {caseData?.difficulty}
+                            {caseItem.difficulty || "Medium"}
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>Time remaining: {getTimeRemaining(assignment.end_at)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <BookOpen className="h-4 w-4" />
-                          <span>Duration: {assignment.time_limit} minutes</span>
-                        </div>
-                        <Button asChild className="w-full rounded-2xl bg-gradient-to-r from-primary to-[#7AA86E]">
-                          <Link to={`/simulation/${assignment.id}`}>
+                      <CardContent>
+                        <Button
+                          asChild
+                          size="sm"
+                          className="w-full rounded-xl"
+                        >
+                          <Link to={`/simulation/${caseItem.id}`}>
                             <PlayCircle className="mr-2 h-4 w-4" />
-                            Start Assessment
+                            Start Case
                           </Link>
                         </Button>
                       </CardContent>
@@ -344,6 +229,11 @@ const StudentDashboard = () => {
                 })
               )}
             </div>
+            {cases.length > 10 && (
+              <Button asChild variant="outline" className="w-full mt-4 rounded-xl">
+                <Link to="/student/assigned">View All Cases</Link>
+              </Button>
+            )}
           </div>
 
           {/* Completed Assessments */}
@@ -362,18 +252,17 @@ const StudentDashboard = () => {
                   </CardContent>
                 </Card>
               ) : (
-              completedRuns.slice(0, 5).map((run) => {
-                const scoreJson = run.score_json as any;
-                const percent = scoreJson?.percent || 0;
+                completedRuns.slice(0, 5).map((run) => {
+                  const scoreJson = run.score_json as any;
+                  const percent = scoreJson?.percent || 0;
                   const grade = getGradeBadge(percent);
-                  const caseTitle = run.assignments?.cases?.title || "Unknown Case";
 
                   return (
                     <Card key={run.id} className="rounded-2xl border-primary/10">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <CardTitle className="text-base">{caseTitle}</CardTitle>
+                            <CardTitle className="text-base">Case Assessment</CardTitle>
                             <CardDescription>
                               {new Date(run.created_at).toLocaleDateString()}
                             </CardDescription>
@@ -409,96 +298,11 @@ const StudentDashboard = () => {
                 })
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Competency Coverage & Remediation */}
-        <div className="mt-8 grid gap-8 lg:grid-cols-2">
-          {/* Competency Heatmap */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
-            <Card className="rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Competency Coverage
-                </CardTitle>
-                <CardDescription>Strengths & weaknesses by NCISM SLO</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {Object.keys(competencyMap).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Complete assessments to see competency analysis
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {Object.entries(competencyMap).map(([slo, data]) => {
-                      const avgScore = Math.round(data.score / data.count);
-                      const color = avgScore >= 85 ? "bg-green-500" : avgScore >= 70 ? "bg-blue-500" : avgScore >= 50 ? "bg-yellow-500" : "bg-red-500";
-                      return (
-                        <div key={slo}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">{slo}</span>
-                            <span className="text-sm text-muted-foreground">{avgScore}%</span>
-                          </div>
-                          <div className="h-2 bg-accent rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full ${color} transition-all`}
-                              style={{ width: `${avgScore}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Remediation Recommendations */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
-            <Card className="rounded-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookMarked className="h-5 w-5" />
-                  Remediation Recommendations
-                </CardTitle>
-                <CardDescription>Focus areas based on your performance</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {remediation.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Great job! No remediation needed.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {remediation.map((topic, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-3 bg-accent/10 rounded-lg">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center text-sm font-semibold">
-                          {idx + 1}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{topic.slo}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Avg: {topic.avgScore}% • {topic.attempts} attempt{topic.attempts > 1 ? 's' : ''}
-                          </p>
-                          <Button 
-                            variant="link" 
-                            size="sm" 
-                            className="h-auto p-0 mt-1 text-xs"
-                            asChild
-                          >
-                            <Link to="/student/remediation">
-                              Practice MCQs →
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {completedRuns.length > 5 && (
+              <Button asChild variant="outline" className="w-full mt-4 rounded-xl">
+                <Link to="/student/progress">View All Completed</Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>

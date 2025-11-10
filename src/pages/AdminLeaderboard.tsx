@@ -54,13 +54,29 @@ const AdminLeaderboard = () => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.functions.invoke('admin_leaderboard', {
-        body: null,
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      // Build query parameters
+      const params = new URLSearchParams({
+        period,
+        date,
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        sort: 'avgScore',
+        order: 'desc',
       });
+
+      if (cohortId) {
+        params.append('cohortId', cohortId);
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke(
+        `admin_leaderboard?${params.toString()}`,
+        {
+          method: 'GET',
+        }
+      );
 
       if (error) throw error;
 

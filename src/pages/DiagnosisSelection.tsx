@@ -62,35 +62,8 @@ const DiagnosisSelection = () => {
       const clinical = run.assignments?.cases?.clinical_json as any;
       setCaseData(clinical);
 
-      // Extract diagnosis options from case data or use defaults with case title
-      const primaryDiagnosis = clinical?.title?.split('—')[0]?.trim() || "Primary diagnosis";
-      
-      const options: DiagnosisOption[] = clinical?.diagnosisOptions || [
-        {
-          id: "D1",
-          text: primaryDiagnosis,
-          hint: "Based on presented symptoms and clinical findings",
-          isCorrect: true,
-        },
-        {
-          id: "D2",
-          text: "Alternative differential diagnosis",
-          hint: "Consider other possible diagnoses",
-          isCorrect: false,
-        },
-        {
-          id: "D3",
-          text: "Secondary differential diagnosis",
-          hint: "Less likely but possible diagnosis",
-          isCorrect: false,
-        },
-        {
-          id: "D4",
-          text: "Other (enter diagnosis below)",
-          hint: "Free-text diagnosis if none above fit",
-          isCorrect: false,
-        },
-      ];
+      // Extract diagnosis options from case data - show actual diagnosis names
+      const options: DiagnosisOption[] = clinical?.diagnosisOptions || [];
 
       setDiagnosisOptions(options);
     } catch (error: any) {

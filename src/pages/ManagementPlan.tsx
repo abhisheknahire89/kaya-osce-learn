@@ -81,23 +81,10 @@ const ManagementPlan = () => {
       const clinical = run.assignments?.cases?.clinical_json as any;
       setCaseData(clinical);
 
-      // Set management options from case data or use defaults
-      const immediate: ManagementOption[] = clinical?.managementOptions?.immediate || [
-        { id: "A1", text: "Start initial stabilization measures", section: "immediate", hint: "First-line intervention" },
-        { id: "A2", text: "Start supportive care", section: "immediate", hint: "Symptomatic relief" },
-        { id: "A3", text: "Monitor vital signs", section: "immediate", hint: "Ongoing assessment" },
-      ];
-
-      const investigations: ManagementOption[] = clinical?.managementOptions?.investigations || [
-        { id: "B1", text: "Order relevant investigations", section: "investigations" },
-        { id: "B2", text: "Perform targeted examination", section: "investigations" },
-      ];
-
-      const definitive: ManagementOption[] = clinical?.managementOptions?.definitive || [
-        { id: "C1", text: "Outpatient care with follow-up", section: "definitive" },
-        { id: "C2", text: "Admit for observation and treatment", section: "definitive" },
-        { id: "C3", text: "Refer to specialist/tertiary center", section: "definitive" },
-      ];
+      // Set management options from case data - show actual generated options
+      const immediate: ManagementOption[] = clinical?.managementOptions || [];
+      const investigations: ManagementOption[] = [];
+      const definitive: ManagementOption[] = [];
 
       setManagementOptions({ immediate, investigations, definitive });
     } catch (error: any) {

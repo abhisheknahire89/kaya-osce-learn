@@ -249,7 +249,7 @@ const GenerateCase = () => {
               {isGenerating ? (
                 <>
                   <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
-                  Generating with Gemini...
+                  Generating case with Aivana AI...
                 </>
               ) : (
                 <>

@@ -260,6 +260,64 @@ export const CasePreviewModal = ({
               </CardContent>
             </Card>
 
+            {/* Correct Diagnosis */}
+            {caseData?.rubric && (() => {
+              const diagnosisSection = caseData.rubric.find((section: any) => 
+                section.section.toLowerCase().includes('diagnosis')
+              );
+              if (!diagnosisSection?.items?.length) return null;
+              
+              return (
+                <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-900">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Check className="h-5 w-5 text-green-600" />
+                      Correct Diagnosis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {diagnosisSection.items.map((item: any, idx: number) => (
+                        <li key={idx} className="text-sm flex items-start gap-2">
+                          <span className="text-green-600 mt-1">•</span>
+                          <span>{item.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
+            {/* Correct Management Plan */}
+            {caseData?.rubric && (() => {
+              const managementSection = caseData.rubric.find((section: any) => 
+                section.section.toLowerCase().includes('management')
+              );
+              if (!managementSection?.items?.length) return null;
+              
+              return (
+                <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Check className="h-5 w-5 text-blue-600" />
+                      Correct Management Plan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {managementSection.items.map((item: any, idx: number) => (
+                        <li key={idx} className="text-sm flex items-start gap-2">
+                          <span className="text-blue-600 mt-1">•</span>
+                          <span>{item.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
             {/* Competencies Tile */}
             {caseData?.sloIds && <Card className="border-secondary/30">
                 <CardHeader>

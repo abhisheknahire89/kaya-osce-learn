@@ -3,18 +3,19 @@ import { Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import kayaLogo from "@/assets/kaya-logo.png";
-
 export const DashboardHeader = () => {
-  const { user, signOut } = useAuth();
+  const {
+    user,
+    signOut
+  } = useAuth();
   const navigate = useNavigate();
-
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
   };
-
-  return (
-    <header className="border-b bg-card sticky top-0 z-50 w-full" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+  return <header className="border-b bg-card sticky top-0 z-50 w-full" style={{
+    paddingTop: 'env(safe-area-inset-top)'
+  }}>
       <div className="flex items-center justify-between px-4 py-4 max-w-full">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <img src={kayaLogo} alt="Kaya Logo" className="h-10 w-auto flex-shrink-0" />
@@ -28,16 +29,9 @@ export const DashboardHeader = () => {
           </div>
         </div>
         <div className="flex gap-2 flex-shrink-0 ml-2">
-          <Button variant="outline" size="sm" className="rounded-xl">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
-          <Button variant="outline" size="sm" className="rounded-xl" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          
+          
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };

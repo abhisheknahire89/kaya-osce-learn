@@ -138,6 +138,13 @@ ${params.ayurvedicContext?.specialModality ? `- specialModality: ${params.ayurve
 - tone: "Ayurvedic clinical, calm, mentor-like"
 - localContext: "India, outpatient primary care"
 
+**CRITICAL FOR DIAGNOSIS OPTIONS**: You MUST generate exactly 4 diagnosis options with SPECIFIC, REALISTIC NAMES:
+- Option D1 (isCorrect: true): The CORRECT primary diagnosis with full Ayurvedic/biomedical name (e.g., "Pittaja Jwara - Pitta dominant fever")
+- Option D2 (isCorrect: false): First differential diagnosis with specific name (e.g., "Kaphaja Jwara - Kapha fever")
+- Option D3 (isCorrect: false): Second differential with specific name (e.g., "Viral Fever with Pitta aggravation")
+- Option D4 (isCorrect: false): Always "Other (enter diagnosis below)"
+NEVER use generic placeholders like "Primary diagnosis" or "Alternative diagnosis 1".
+
 Required JSON structure:
 {
   "id": "uuid-string",
@@ -166,29 +173,29 @@ Required JSON structure:
   "diagnosisOptions": [
     {
       "id": "D1",
-      "text": "Primary diagnosis name (e.g., Pittaja Jwara)",
-      "hint": "Brief clinical reasoning",
+      "text": "The primary diagnosis name matching the case (e.g., Pittaja Jwara - Pitta dominant fever)",
+      "hint": "Based on presenting symptoms and clinical findings",
       "isCorrect": true,
-      "sloIds": ["relevant SLO IDs"]
+      "sloIds": ["relevant SLO IDs from the case"]
     },
     {
-      "id": "D2",
-      "text": "First differential diagnosis name",
-      "hint": "Why it's a differential",
+      "id": "D2", 
+      "text": "First plausible differential diagnosis name (e.g., Viral Fever, Kaphaja Jwara)",
+      "hint": "A differential diagnosis that shares some symptoms",
       "isCorrect": false,
       "sloIds": ["relevant SLO IDs"]
     },
     {
       "id": "D3",
-      "text": "Second differential diagnosis name",
-      "hint": "Clinical reasoning",
+      "text": "Second plausible differential diagnosis name (e.g., Malaria, Vataja Jwara)",
+      "hint": "Another differential diagnosis to consider",
       "isCorrect": false,
       "sloIds": ["relevant SLO IDs"]
     },
     {
       "id": "D4",
       "text": "Other (enter diagnosis below)",
-      "hint": "Free-text diagnosis option",
+      "hint": "Free-text diagnosis if none above fit",
       "isCorrect": false
     }
   ],

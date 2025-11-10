@@ -43,11 +43,13 @@ interface LabTest {
   result: string;
 }
 
-const SUGGESTED_PROMPTS = [
-  "Can you describe your pain?",
-  "When did this symptom start?",
-  "Does anything make it better or worse?",
-  "Are you taking any medications?",
+const QUICK_ACTIONS = [
+  "Ask about Agni (digestion)",
+  "Ask about Nidra (sleep)",
+  "Ask about bowel movements",
+  "Ask about Nadi (pulse)",
+  "When did this start?",
+  "Any other symptoms?",
 ];
 
 const Simulation = () => {
@@ -392,25 +394,23 @@ const Simulation = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Suggested Prompts */}
-          {messages.length <= 2 && (
-            <div className="px-4 py-2 border-t bg-accent/5">
-              <p className="text-xs text-muted-foreground mb-2">Suggested questions:</p>
-              <div className="flex gap-2 overflow-x-auto">
-                {SUGGESTED_PROMPTS.map((prompt, idx) => (
-                  <Button
-                    key={idx}
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs rounded-2xl whitespace-nowrap"
-                    onClick={() => setInput(prompt)}
-                  >
-                    {prompt}
-                  </Button>
-                ))}
-              </div>
+          {/* Quick Action Chips */}
+          <div className="px-4 py-2 border-t bg-accent/5">
+            <p className="text-xs text-muted-foreground mb-2">Quick Actions:</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {QUICK_ACTIONS.map((action, idx) => (
+                <Button
+                  key={idx}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs rounded-full whitespace-nowrap border-primary/20 hover:bg-primary/10"
+                  onClick={() => setInput(action)}
+                >
+                  {action}
+                </Button>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Input Area */}
           <div className="border-t bg-card px-4 py-3">
@@ -568,11 +568,22 @@ const Simulation = () => {
 
       {/* Action Buttons - Fixed at bottom */}
       <div className="border-t bg-card px-4 py-3">
+        {messages.length >= 3 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 text-center">
+            <p className="text-sm text-blue-900 font-medium">
+              You've gathered enough information
+            </p>
+            <p className="text-xs text-blue-700 mt-1">
+              Proceed to diagnosis when ready
+            </p>
+          </div>
+        )}
         <div className="flex gap-2">
           <Button
             onClick={() => navigate(`/diagnosis/${runId}`)}
             className="flex-1 rounded-2xl"
             size="lg"
+            disabled={messages.length < 2}
           >
             Proceed: Diagnose
           </Button>
@@ -583,7 +594,7 @@ const Simulation = () => {
             className="flex-1 rounded-2xl"
             size="lg"
           >
-            Submit Early
+            {isSubmitting ? "Submitting..." : "Submit Early"}
           </Button>
         </div>
       </div>

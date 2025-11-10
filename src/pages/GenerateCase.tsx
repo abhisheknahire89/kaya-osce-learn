@@ -222,23 +222,23 @@ const GenerateCase = () => {
       {/* Loading Overlay */}
       {isGenerating && <LoadingWithFacts />}
       
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Link to="/faculty">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <img src={kayaLogo} alt="Kaya Logo" className="h-10 w-auto" />
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Generate OSCE Case</h1>
-              <p className="text-xs text-muted-foreground" lang="hi">केस निर्माण</p>
+      <div className="min-h-screen bg-background w-full overflow-x-hidden">
+        <header className="border-b bg-card sticky top-0 z-50 w-full" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          <div className="flex items-center justify-between px-4 py-4 max-w-full">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <Link to="/faculty" className="flex-shrink-0">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <img src={kayaLogo} alt="Kaya Logo" className="h-10 w-auto flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-bold text-foreground truncate">Generate OSCE Case</h1>
+                <p className="text-xs text-muted-foreground truncate" lang="hi">केस निर्माण</p>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Card className="rounded-2xl border-primary/20">

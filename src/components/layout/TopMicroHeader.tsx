@@ -31,28 +31,28 @@ export const TopMicroHeader = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-card border-b border-border">
-      <div className="flex items-center justify-between h-14 px-4">
-        {/* Left: Back button */}
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-50 bg-card border-b border-border w-full">
+      <div className="flex items-center justify-between h-14 px-4 max-w-full" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        {/* Left: Back button and title */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {showBack && (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleBack}
-              className="h-9 w-9"
+              className="h-9 w-9 flex-shrink-0"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
           
-          {/* Center: Title with subtitle */}
-          <div className="flex flex-col">
-            <h1 className="text-base font-semibold text-foreground leading-tight">
+          {/* Title with subtitle */}
+          <div className="flex flex-col min-w-0 flex-1">
+            <h1 className="text-base font-semibold text-foreground leading-tight truncate">
               {title}
             </h1>
             {(subtitle || subtitleHindi) && (
-              <p className="text-xs text-muted-foreground leading-tight" lang="hi">
+              <p className="text-xs text-muted-foreground leading-tight truncate" lang="hi">
                 {subtitleHindi || subtitle}
               </p>
             )}
@@ -61,7 +61,7 @@ export const TopMicroHeader = ({
 
         {/* Right: Contextual action */}
         {rightAction && (
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0 ml-2">
             {rightAction}
           </div>
         )}

@@ -11,6 +11,8 @@ import FacultyDashboard from "./pages/FacultyDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import GenerateCase from "./pages/GenerateCase";
 import Simulation from "./pages/Simulation";
+import DiagnosisSelection from "./pages/DiagnosisSelection";
+import ManagementPlan from "./pages/ManagementPlan";
 import Debrief from "./pages/Debrief";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +57,30 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="student">
                   <Simulation />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/simulation/:runId" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <Simulation />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/diagnosis/:runId" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <DiagnosisSelection />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/management/:runId" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <ManagementPlan />
                 </ProtectedRoute>
               } 
             />

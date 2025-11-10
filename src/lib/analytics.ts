@@ -23,7 +23,10 @@ export type AnalyticsEvent =
   | "run_retry"
   | "approve_swipe"
   | "reject_swipe"
-  | "bulk_approve";
+  | "bulk_approve"
+  | "diagnosis_submitted"
+  | "management_submitted"
+  | "proceed_to_diagnosis";
 
 interface AnalyticsPayload {
   event: AnalyticsEvent;

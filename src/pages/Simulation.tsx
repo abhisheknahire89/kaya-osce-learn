@@ -495,16 +495,26 @@ const Simulation = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Submit Button - Fixed at bottom */}
+      {/* Action Buttons - Fixed at bottom */}
       <div className="border-t bg-card px-4 py-3">
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full rounded-2xl"
-          size="lg"
-        >
-          Submit Assessment
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => navigate(`/diagnosis/${runId}`)}
+            className="flex-1 rounded-2xl"
+            size="lg"
+          >
+            Proceed: Diagnose
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            variant="outline"
+            className="flex-1 rounded-2xl"
+            size="lg"
+          >
+            Submit Early
+          </Button>
+        </div>
       </div>
     </div>
   );

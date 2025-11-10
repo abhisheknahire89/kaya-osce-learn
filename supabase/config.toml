@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.submit_run]
 verify_jwt = false
+
+[functions.submit_diagnosis]
+verify_jwt = false
+
+[functions.submit_management]
+verify_jwt = false

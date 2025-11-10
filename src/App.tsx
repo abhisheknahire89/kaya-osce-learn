@@ -8,7 +8,9 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import FacultyDashboard from "./pages/FacultyDashboard";
+import FacultyLibrary from "./pages/FacultyLibrary";
 import StudentDashboard from "./pages/StudentDashboard";
+import StudentRemediation from "./pages/StudentRemediation";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLeaderboard from "./pages/AdminLeaderboard";
 import GenerateCase from "./pages/GenerateCase";
@@ -47,10 +49,26 @@ const App = () => (
               } 
             />
             <Route 
+              path="/faculty/library" 
+              element={
+                <ProtectedRoute requiredRole="faculty">
+                  <FacultyLibrary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/student" 
               element={
                 <ProtectedRoute requiredRole="student">
                   <StudentDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/student/remediation" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentRemediation />
                 </ProtectedRoute>
               } 
             />

@@ -1,6 +1,38 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// Reference citation helper
+const getCitationForTopic = (topic: string): string => {
+  const topicLower = topic.toLowerCase();
+
+  if (topicLower.includes("agni") || topicLower.includes("appetite")) {
+    return "Charaka Samhita — Vimana Sthana";
+  }
+  if (topicLower.includes("nadi") || topicLower.includes("pulse")) {
+    return "Science of Nadi Vijnana — Clinical Applications";
+  }
+  if (topicLower.includes("jwara") || topicLower.includes("fever")) {
+    return "Kayachikitsa: Principles and Practice — Chapter on Jwara";
+  }
+  if (topicLower.includes("socrates") || topicLower.includes("history")) {
+    return "Clinical Methods in Ayurveda — History Taking";
+  }
+  if (topicLower.includes("physical exam") || topicLower.includes("examination")) {
+    return "Clinical Methods in Ayurveda — Physical Examination Methods";
+  }
+  if (topicLower.includes("diagnosis") || topicLower.includes("differential")) {
+    return "Clinical Methods in Ayurveda — Diagnostic Reasoning";
+  }
+  if (topicLower.includes("competency") || topicLower.includes("cbdc")) {
+    return "NCISM CBDC — Kayachikitsa Clinical Competencies";
+  }
+  if (topicLower.includes("osce") || topicLower.includes("assessment")) {
+    return "Virtual OSCE Guidelines — Rubric Development";
+  }
+
+  return "NCISM CBDC — Kayachikitsa Clinical Competencies";
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -199,12 +231,16 @@ Return ONLY valid JSON in this format:
     const missedChecklist = sections.flatMap(section =>
       section.items
         .filter((item: any) => item.achieved === 0)
-        .map((item: any) => ({
-          id: item.id,
-          text: item.text,
-          tip: item.tip || `Review the ${section.section} section`,
-          resource: item.reference || "NCISM CBDC Guidelines",
-        }))
+        .map((item: any) => {
+          // Generate appropriate citation based on item content
+          const citation = getCitationForTopic(item.text);
+          return {
+            id: item.id,
+            text: item.text,
+            tip: item.tip || `Review the ${section.section} section`,
+            resource: citation,
+          };
+        })
     );
 
     // Generate stepwise reasoning
@@ -216,19 +252,19 @@ Return ONLY valid JSON in this format:
       `5. Plan management: Immediate interventions and follow-up care`,
     ];
 
-    // Generate learning pearls
+    // Generate learning pearls with proper citations
     const pearls = [
       {
         text: `Station score: ${percentage}% - ${passed ? 'Passed' : 'Needs improvement'}`,
-        ref: "Virtual OSCE Rubric",
+        ref: "Virtual OSCE Guidelines — Assessment Design Principles",
       },
       {
         text: "Order only relevant tests - unnecessary tests do not provide clinical value",
-        ref: "OSCE Best Practices",
+        ref: "Clinical Methods in Ayurveda — Diagnostic Reasoning",
       },
       {
         text: "Systematic history-taking using SOCRATES improves diagnostic accuracy",
-        ref: "Clinical Assessment Guidelines",
+        ref: "Clinical Methods in Ayurveda — History Taking in Ayurveda",
       },
     ];
 

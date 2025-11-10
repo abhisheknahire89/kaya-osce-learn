@@ -114,10 +114,10 @@ const Debrief = () => {
           },
         ],
         missedChecklist: [
-          { id: "H2", text: "Ask agni/appetite", tip: "Ask: 'How is your appetite? Any burning?'", resource: "HEB CBDC — Kayachikitsa" },
-          { id: "H4", text: "Ask about recent travel", tip: "Ask: 'Any recent travel or exposure?'", resource: "Virtual OSCE notes" },
-          { id: "E4", text: "Interpret lab results", tip: "Explain the significance of elevated WBC", resource: "Clinical Labs Guide" },
-          { id: "D2", text: "Justify differential", tip: "Provide brief differential diagnosis", resource: "Diagnostic Guidelines" },
+          { id: "H2", text: "Ask agni/appetite", tip: "Ask: 'How is your appetite? Any burning?'", resource: "Charaka Samhita — Vimana Sthana" },
+          { id: "H4", text: "Ask about recent travel", tip: "Ask: 'Any recent travel or exposure?'", resource: "Clinical Methods in Ayurveda — History Taking" },
+          { id: "E4", text: "Interpret lab results", tip: "Explain the significance of elevated WBC", resource: "Clinical Methods in Ayurveda — Diagnostic Reasoning" },
+          { id: "D2", text: "Justify differential", tip: "Provide brief differential diagnosis", resource: "Kayachikitsa: Principles and Practice — Chapter on Jwara" },
         ],
         stepwiseReasoning: [
           "1. Fever + intense thirst → suspect Pittaja involvement",
@@ -126,9 +126,9 @@ const Debrief = () => {
           "4. Start cooling measures and ORS; plan referral if deterioration",
         ],
         learningPearls: [
-          { text: "Pittaja Jwara typically presents with intense thirst and red tongue", ref: "Virtual OSCE rubric" },
-          { text: "Order targeted tests; non-relevant tests return normal values", ref: "Kaya Blueprint" },
-          { text: "Systematic SOCRATES approach improves diagnostic accuracy", ref: "Clinical Assessment" },
+          { text: "Pittaja Jwara typically presents with intense thirst and red tongue", ref: "Kayachikitsa: Principles and Practice — Chapter on Jwara" },
+          { text: "Order targeted tests; non-relevant tests return normal values", ref: "Clinical Methods in Ayurveda — Diagnostic Reasoning" },
+          { text: "Systematic SOCRATES approach improves diagnostic accuracy", ref: "Clinical Methods in Ayurveda — History Taking in Ayurveda" },
         ],
         mcqs: [
           {

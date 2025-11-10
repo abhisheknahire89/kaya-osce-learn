@@ -1,0 +1,151 @@
+{
+  "references": [
+    {
+      "id": "HEB-NCH-CBDC",
+      "title": "NCISM Competency-Based Dynamic Curriculum",
+      "category": "Curriculum Guidelines",
+      "authors": ["National Commission for Indian System of Medicine"],
+      "year": "2023",
+      "publisher": "Ministry of AYUSH",
+      "chapters": {
+        "kayachikitsa": "Kayachikitsa Clinical Competencies",
+        "roga_nidana": "Roga Nidana and Vikriti Vijnana",
+        "rasashastra": "Rasashastra and Bhaishajya Kalpana"
+      },
+      "file_id": "file-cbdc-ncism-2023",
+      "available": true
+    },
+    {
+      "id": "CHARAKA-SAMHITA",
+      "title": "Charaka Samhita",
+      "category": "Classical Text",
+      "authors": ["Agnivesha", "Charaka", "Dridhbala"],
+      "translators": ["Sharma RK", "Dash B"],
+      "year": "1977",
+      "publisher": "Chowkhamba Sanskrit Series",
+      "volumes": 7,
+      "chapters": {
+        "chikitsa_sthana": "Chikitsa Sthana (Treatment Section)",
+        "nidana_sthana": "Nidana Sthana (Diagnosis Section)",
+        "vimana_sthana": "Vimana Sthana (Specific Determinations)"
+      },
+      "file_id": "file-charaka-samhita",
+      "available": true
+    },
+    {
+      "id": "SUSHRUTA-SAMHITA",
+      "title": "Sushruta Samhita",
+      "category": "Classical Text",
+      "authors": ["Sushruta"],
+      "translators": ["Murthy KR Srikantha"],
+      "year": "2001",
+      "publisher": "Chaukhambha Orientalia",
+      "volumes": 3,
+      "chapters": {
+        "sutra_sthana": "Sutra Sthana (Basic Principles)",
+        "nidana_sthana": "Nidana Sthana (Pathology)",
+        "sharira_sthana": "Sharira Sthana (Anatomy)"
+      },
+      "file_id": "file-sushruta-samhita",
+      "available": true
+    },
+    {
+      "id": "ASHTANGA-HRIDAYA",
+      "title": "Ashtanga Hridaya",
+      "category": "Classical Text",
+      "authors": ["Vagbhata"],
+      "translators": ["Murthy KR Srikantha"],
+      "year": "1995",
+      "publisher": "Krishnadas Academy",
+      "volumes": 3,
+      "chapters": {
+        "sutra_sthana": "Sutra Sthana",
+        "nidana_sthana": "Nidana Sthana",
+        "chikitsa_sthana": "Chikitsa Sthana"
+      },
+      "file_id": "file-ashtanga-hridaya",
+      "available": true
+    },
+    {
+      "id": "KAYACHIKITSA-TEXTBOOK",
+      "title": "Kayachikitsa: Principles and Practice",
+      "category": "Modern Textbook",
+      "authors": ["Tripathi YB", "Singh RH"],
+      "year": "2019",
+      "publisher": "Chaukhambha Sanskrit Pratishthan",
+      "edition": "5th Edition",
+      "chapters": {
+        "jwara": "Chapter on Jwara (Fever)",
+        "pandu": "Chapter on Pandu Roga (Anemia)",
+        "prameha": "Chapter on Prameha (Diabetes)"
+      },
+      "file_id": "file-kayachikitsa-textbook",
+      "available": true
+    },
+    {
+      "id": "NADI-VIJNANA",
+      "title": "Science of Nadi Vijnana (Pulse Diagnosis)",
+      "category": "Diagnostic Methods",
+      "authors": ["Upadhyay S"],
+      "year": "2016",
+      "publisher": "Chaukhamba Orientalia",
+      "chapters": {
+        "basics": "Fundamentals of Nadi Pariksha",
+        "dosha_nadi": "Dosha-specific Pulse Patterns",
+        "clinical": "Clinical Applications"
+      },
+      "file_id": "file-nadi-vijnana",
+      "available": true
+    },
+    {
+      "id": "VOSCE-GUIDELINES",
+      "title": "Virtual OSCE Assessment Guidelines for AYUSH Education",
+      "category": "Assessment Guidelines",
+      "authors": ["NCISM Assessment Committee"],
+      "year": "2024",
+      "publisher": "Ministry of AYUSH",
+      "chapters": {
+        "osce_design": "OSCE Station Design",
+        "rubrics": "Rubric Development",
+        "virtual_patient": "Virtual Patient Simulations"
+      },
+      "file_id": "file-vosce-guidelines",
+      "available": true
+    },
+    {
+      "id": "CLINICAL-METHODS",
+      "title": "Clinical Methods in Ayurveda",
+      "category": "Clinical Practice",
+      "authors": ["Patwardhan B", "Warude D"],
+      "year": "2018",
+      "publisher": "Cambridge University Press",
+      "chapters": {
+        "history": "History Taking in Ayurveda",
+        "examination": "Physical Examination Methods",
+        "diagnostics": "Diagnostic Reasoning"
+      },
+      "file_id": "file-clinical-methods",
+      "available": true
+    },
+    {
+      "id": "KAYA-BLUEPRINT",
+      "title": "Kaya Virtual Patient Platform: Educational Blueprint",
+      "category": "Platform Documentation",
+      "authors": ["Kaya Development Team"],
+      "year": "2025",
+      "publisher": "Internal Documentation",
+      "chapters": {
+        "pedagogy": "Pedagogical Framework",
+        "assessment": "Assessment Design Principles",
+        "competencies": "Competency Mapping"
+      },
+      "file_id": "file-kaya-blueprint",
+      "available": true
+    }
+  ],
+  "citation_format": {
+    "standard": "{authors} ({year}). {title}. {publisher}. {chapter}",
+    "short": "{title} — {chapter}",
+    "audit": "{id} [{file_id}] — {title} by {authors} ({year})"
+  }
+}

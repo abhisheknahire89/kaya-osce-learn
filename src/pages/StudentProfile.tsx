@@ -9,19 +9,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { COHORTS } from "@/constants/cohorts";
 
 const StudentProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  const [cohorts, setCohorts] = useState<any[]>([]);
+  const cohorts = COHORTS;
   const [selectedCohort, setSelectedCohort] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchProfile();
-      fetchCohorts();
     }
   }, [user]);
 
@@ -39,20 +39,6 @@ const StudentProfile = () => {
       setSelectedCohort(metadata?.cohort_id || "");
     } catch (error) {
       console.error('Error fetching profile:', error);
-    }
-  };
-
-  const fetchCohorts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cohorts')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setCohorts(data || []);
-    } catch (error) {
-      console.error('Error fetching cohorts:', error);
     }
   };
 

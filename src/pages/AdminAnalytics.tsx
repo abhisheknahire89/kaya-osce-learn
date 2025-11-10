@@ -7,12 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/faculty/DashboardHeader";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
+import { COHORTS } from "@/constants/cohorts";
 
 const AdminAnalytics = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d');
-  const [cohorts, setCohorts] = useState<any[]>([]);
+  const cohorts = COHORTS;
   const [selectedCohort, setSelectedCohort] = useState<string>('all');
   const [analytics, setAnalytics] = useState({
     performanceBySubject: [] as any[],
@@ -22,28 +23,8 @@ const AdminAnalytics = () => {
   });
 
   useEffect(() => {
-    fetchCohorts();
-  }, []);
-
-  useEffect(() => {
-    if (cohorts.length > 0 || selectedCohort === 'all') {
-      fetchAnalytics();
-    }
-  }, [period, selectedCohort, cohorts]);
-
-  const fetchCohorts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cohorts')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setCohorts(data || []);
-    } catch (error: any) {
-      console.error('Error fetching cohorts:', error);
-    }
-  };
+    fetchAnalytics();
+  }, [period, selectedCohort]);
 
   const fetchAnalytics = async () => {
     try {

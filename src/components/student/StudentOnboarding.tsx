@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap } from "lucide-react";
 import kayaLogo from "@/assets/kaya-logo.png";
+import { COHORTS } from "@/constants/cohorts";
 
 interface StudentOnboardingProps {
   isOpen: boolean;
@@ -16,36 +17,11 @@ interface StudentOnboardingProps {
 }
 
 export const StudentOnboarding = ({ isOpen, userId, userName }: StudentOnboardingProps) => {
-  const [cohorts, setCohorts] = useState<any[]>([]);
+  const cohorts = COHORTS;
   const [selectedCohort, setSelectedCohort] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchCohorts();
-    }
-  }, [isOpen]);
-
-  const fetchCohorts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cohorts')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setCohorts(data || []);
-    } catch (error) {
-      console.error('Error fetching cohorts:', error);
-      toast({
-        title: "Error loading cohorts",
-        description: "Please try refreshing the page",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleComplete = async () => {
     if (!selectedCohort) {

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { COHORTS } from "@/constants/cohorts";
 
 export const AuthForm = () => {
   const navigate = useNavigate();
@@ -16,25 +17,7 @@ export const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [role, setRole] = useState<"faculty" | "student" | "admin">("student");
   const [cohortId, setCohortId] = useState<string>("");
-  const [cohorts, setCohorts] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetchCohorts();
-  }, []);
-
-  const fetchCohorts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cohorts')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setCohorts(data || []);
-    } catch (error) {
-      console.error('Error fetching cohorts:', error);
-    }
-  };
+  const cohorts = COHORTS;
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/faculty/DashboardHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { COHORTS } from "@/constants/cohorts";
 
 const AdminLeaderboard = () => {
   const { toast } = useToast();
@@ -21,7 +22,7 @@ const AdminLeaderboard = () => {
     return yesterday.toISOString().split('T')[0];
   });
   const [cohortId, setCohortId] = useState<string>('all');
-  const [cohorts, setCohorts] = useState<any[]>([]);
+  const cohorts = COHORTS;
   const [metrics, setMetrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,23 +33,8 @@ const AdminLeaderboard = () => {
   const [studentModalOpen, setStudentModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchCohorts();
     fetchLeaderboard();
   }, [period, date, cohortId, page]);
-
-  const fetchCohorts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cohorts')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      setCohorts(data || []);
-    } catch (error: any) {
-      console.error('Error fetching cohorts:', error);
-    }
-  };
 
   const fetchLeaderboard = async () => {
     try {

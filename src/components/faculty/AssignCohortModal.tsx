@@ -8,6 +8,7 @@ import { X, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { COHORTS } from "@/constants/cohorts";
 
 interface AssignCohortModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export const AssignCohortModal = ({
   onAssignComplete,
 }: AssignCohortModalProps) => {
   const { toast } = useToast();
-  const [cohorts, setCohorts] = useState<any[]>([]);
+  const cohorts = COHORTS;
   const [selectedCohort, setSelectedCohort] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -32,34 +33,16 @@ export const AssignCohortModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      fetchCohorts();
       // Set default dates
       const now = new Date();
       const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       setStartDate(now.toISOString().split('T')[0]);
       setEndDate(weekLater.toISOString().split('T')[0]);
+      
+      // Auto-select "3rd year"
+      setSelectedCohort("3rd-year");
     }
   }, [isOpen]);
-
-  const fetchCohorts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("cohorts")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      setCohorts(data || []);
-      
-      // Auto-select "3rd Year" if it exists
-      const thirdYear = data?.find(c => c.name.toLowerCase().includes("3rd year"));
-      if (thirdYear) {
-        setSelectedCohort(thirdYear.id);
-      }
-    } catch (error: any) {
-      console.error("Error fetching cohorts:", error);
-    }
-  };
 
   const handleAssign = async () => {
     if (!selectedCohort) {

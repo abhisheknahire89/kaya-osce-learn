@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, TrendingUp, Users, Award } from "lucide-react";
+import { Trophy, TrendingUp, Users, Award, Loader2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/faculty/DashboardHeader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -34,42 +35,47 @@ const AdminDashboard = () => {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+      // Fetch all profiles first to get total students
+      const { data: allProfiles, error: allProfilesError } = await supabase
+        .from("profiles")
+        .select("id, name");
+
+      if (allProfilesError) throw allProfilesError;
+
       // Fetch all scored runs
       const { data: allRuns, error: runsError } = await supabase
         .from("simulation_runs")
-        .select("id, student_id, score_json, created_at, status")
+        .select("id, student_id, score_json, created_at, status, end_at")
         .eq("status", "scored");
 
       if (runsError) throw runsError;
 
-      // Fetch all student profiles
-      const studentIds = [...new Set(allRuns?.map(r => r.student_id) || [])];
-      const { data: studentProfiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("id", studentIds);
-
-      if (profilesError) throw profilesError;
-
       // Create a map of student profiles
-      const profileMap = new Map(studentProfiles?.map(p => [p.id, p]) || []);
+      const profileMap = new Map(allProfiles?.map(p => [p.id, p]) || []);
 
       // Enrich runs with profile data
       const enrichedRuns = allRuns?.map(run => ({
         ...run,
         profiles: profileMap.get(run.student_id)
-      })) || [];
+      })).filter(run => run.profiles) || [];
 
       // Calculate stats
-      const uniqueStudents = new Set(enrichedRuns.map(r => r.student_id));
-      const scores = enrichedRuns.map(r => (r.score_json as any)?.percent || 0).filter(s => s > 0);
+      const studentsWithScores = new Set(enrichedRuns.map(r => r.student_id));
+      const scores = enrichedRuns
+        .map(r => (r.score_json as any)?.percent || 0)
+        .filter(s => s > 0);
       const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
+      // Calculate completion rate (students who completed at least one assessment)
+      const completionRate = allProfiles?.length 
+        ? Math.round((studentsWithScores.size / allProfiles.length) * 100)
+        : 0;
+
       setStats({
-        totalStudents: uniqueStudents.size,
+        totalStudents: allProfiles?.length || 0,
         activeAssessments: enrichedRuns.length,
         avgScore: Math.round(avgScore),
-        completionRate: 75, // Placeholder
+        completionRate,
       });
 
       // Build daily leaderboard
@@ -137,6 +143,19 @@ const AdminDashboard = () => {
     return "text-red-600";
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardHeader />
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader />
@@ -157,42 +176,44 @@ const AdminDashboard = () => {
 
         {/* Stats Overview */}
         <div className="mb-8 grid gap-4 md:grid-cols-4">
-          <Card className="rounded-2xl border-primary/20">
+          <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/5 to-background">
             <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
+              <CardDescription className="flex items-center gap-2 text-muted-foreground">
                 <Users className="h-4 w-4" />
                 Total Students
               </CardDescription>
-              <CardTitle className="text-3xl">{stats.totalStudents}</CardTitle>
+              <CardTitle className="text-4xl font-bold text-foreground">{stats.totalStudents}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">All registered students</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-2xl border-primary/20">
+          <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-accent/5 to-background">
             <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
+              <CardDescription className="flex items-center gap-2 text-muted-foreground">
                 <Award className="h-4 w-4" />
-                Completed Assessments
+                Assessments
               </CardDescription>
-              <CardTitle className="text-3xl">{stats.activeAssessments}</CardTitle>
+              <CardTitle className="text-4xl font-bold text-foreground">{stats.activeAssessments}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Total completed</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-2xl border-primary/20">
+          <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-secondary/5 to-background">
             <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
+              <CardDescription className="flex items-center gap-2 text-muted-foreground">
                 <TrendingUp className="h-4 w-4" />
                 Average Score
               </CardDescription>
-              <CardTitle className="text-3xl">{stats.avgScore}%</CardTitle>
+              <CardTitle className="text-4xl font-bold text-foreground">{stats.avgScore}%</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Across all assessments</p>
             </CardHeader>
           </Card>
-          <Card className="rounded-2xl border-primary/20">
+          <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 to-background">
             <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
+              <CardDescription className="flex items-center gap-2 text-muted-foreground">
                 <Trophy className="h-4 w-4" />
-                Top Performer
+                Completion Rate
               </CardDescription>
-              <CardTitle className="text-base">
-                {weeklyLeaderboard[0]?.name || "N/A"}
-              </CardTitle>
+              <CardTitle className="text-4xl font-bold text-foreground">{stats.completionRate}%</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Students with ≥1 assessment</p>
             </CardHeader>
           </Card>
         </div>
@@ -219,12 +240,13 @@ const AdminDashboard = () => {
               </TabsList>
 
               <TabsContent value="daily" className="mt-6">
-                {loading ? (
-                  <p className="text-center text-muted-foreground py-8">Loading...</p>
-                ) : dailyLeaderboard.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No assessments completed today
-                  </p>
+                {dailyLeaderboard.length === 0 ? (
+                  <Alert className="rounded-xl">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      No assessments completed today. Check back later!
+                    </AlertDescription>
+                  </Alert>
                 ) : (
                   <div className="space-y-3">
                     {dailyLeaderboard.map((student, idx) => {
@@ -260,12 +282,13 @@ const AdminDashboard = () => {
               </TabsContent>
 
               <TabsContent value="weekly" className="mt-6">
-                {loading ? (
-                  <p className="text-center text-muted-foreground py-8">Loading...</p>
-                ) : weeklyLeaderboard.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    No assessments completed this week
-                  </p>
+                {weeklyLeaderboard.length === 0 ? (
+                  <Alert className="rounded-xl">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      No assessments completed this week. Check back later!
+                    </AlertDescription>
+                  </Alert>
                 ) : (
                   <div className="space-y-3">
                     {weeklyLeaderboard.map((student, idx) => {

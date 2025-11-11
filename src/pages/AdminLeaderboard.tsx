@@ -11,9 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/faculty/DashboardHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-
 const AdminLeaderboard = () => {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [period, setPeriod] = useState<'daily' | 'weekly'>('weekly');
   const [date, setDate] = useState(() => {
     const yesterday = new Date();
@@ -29,11 +30,9 @@ const AdminLeaderboard = () => {
   const [totalStudents, setTotalStudents] = useState(0);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [studentModalOpen, setStudentModalOpen] = useState(false);
-
   useEffect(() => {
     fetchLeaderboard();
   }, [period, date, cohortId, page]);
-
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
@@ -45,25 +44,24 @@ const AdminLeaderboard = () => {
         page: page.toString(),
         pageSize: pageSize.toString(),
         sort: 'avgScore',
-        order: 'desc',
+        order: 'desc'
       });
-
       if (cohortId && cohortId !== 'all') {
         params.append('cohortId', cohortId);
       }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase.functions.invoke(
-        `admin_leaderboard?${params.toString()}`,
-        {
-          method: 'GET',
+      const {
+        data: {
+          user
         }
-      );
-
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke(`admin_leaderboard?${params.toString()}`, {
+        method: 'GET'
+      });
       if (error) throw error;
-
       setMetrics(data.metrics || []);
       setTotalStudents(data.totalStudents || 0);
     } catch (error: any) {
@@ -71,27 +69,30 @@ const AdminLeaderboard = () => {
       toast({
         title: "Failed to load leaderboard",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      
-      const { data, error } = await supabase.functions.invoke('admin_leaderboard', {
-        body: { period, snapshot_date: date, cohort_id: cohortId && cohortId !== 'all' ? cohortId : null },
-        method: 'POST',
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('admin_leaderboard', {
+        body: {
+          period,
+          snapshot_date: date,
+          cohort_id: cohortId && cohortId !== 'all' ? cohortId : null
+        },
+        method: 'POST'
       });
-
       if (error) throw error;
-
       toast({
         title: "Snapshot refreshed",
-        description: "Leaderboard data has been regenerated",
+        description: "Leaderboard data has been regenerated"
       });
 
       // Reload leaderboard
@@ -101,34 +102,33 @@ const AdminLeaderboard = () => {
       toast({
         title: "Refresh failed",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setRefreshing(false);
     }
   };
-
   const handleExport = async (format: 'csv' | 'json') => {
     try {
       const params = new URLSearchParams({
         period,
         date,
         format,
-        ...(cohortId && cohortId !== 'all' && { cohortId }),
+        ...(cohortId && cohortId !== 'all' && {
+          cohortId
+        })
       });
-
-      const { data, error } = await supabase.functions.invoke(
-        `admin_leaderboard_export?${params.toString()}`,
-        {
-          method: 'GET',
-        }
-      );
-
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke(`admin_leaderboard_export?${params.toString()}`, {
+        method: 'GET'
+      });
       if (error) throw error;
 
       // Create download link
       const blob = new Blob([format === 'csv' ? data : JSON.stringify(data, null, 2)], {
-        type: format === 'csv' ? 'text/csv' : 'application/json',
+        type: format === 'csv' ? 'text/csv' : 'application/json'
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -136,46 +136,52 @@ const AdminLeaderboard = () => {
       a.download = `leaderboard_${period}_${date}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
-
       toast({
         title: "Export successful",
-        description: `Downloaded as ${format.toUpperCase()}`,
+        description: `Downloaded as ${format.toUpperCase()}`
       });
     } catch (error: any) {
       console.error('Error exporting leaderboard:', error);
       toast({
         title: "Export failed",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const getRankBadge = (rank: number) => {
-    if (rank === 1) return { icon: "🥇", bg: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20" };
-    if (rank === 2) return { icon: "🥈", bg: "bg-gray-400/10 text-gray-700 border-gray-400/20" };
-    if (rank === 3) return { icon: "🥉", bg: "bg-orange-500/10 text-orange-700 border-orange-500/20" };
-    return { icon: rank.toString(), bg: "bg-accent text-accent-foreground border-border" };
+    if (rank === 1) return {
+      icon: "🥇",
+      bg: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20"
+    };
+    if (rank === 2) return {
+      icon: "🥈",
+      bg: "bg-gray-400/10 text-gray-700 border-gray-400/20"
+    };
+    if (rank === 3) return {
+      icon: "🥉",
+      bg: "bg-orange-500/10 text-orange-700 border-orange-500/20"
+    };
+    return {
+      icon: rank.toString(),
+      bg: "bg-accent text-accent-foreground border-border"
+    };
   };
-
   const getScoreColor = (score: number) => {
     if (score >= 85) return "text-green-600 dark:text-green-400";
     if (score >= 70) return "text-blue-600 dark:text-blue-400";
     if (score >= 50) return "text-yellow-600 dark:text-yellow-400";
     return "text-red-600 dark:text-red-400";
   };
-
   const totalPages = Math.ceil(totalStudents / pageSize);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <DashboardHeader />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Trophy className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">Leaderboard
+श्रेणी सूची<Trophy className="h-8 w-8 text-primary" />
             Admin — Leaderboard
             <span className="text-base font-normal text-muted-foreground ml-2" lang="hi">
               श्रेणी सूची
@@ -193,7 +199,7 @@ const AdminLeaderboard = () => {
               {/* Period Toggle */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Period</label>
-                <Tabs value={period} onValueChange={(v) => setPeriod(v as any)} className="w-full">
+                <Tabs value={period} onValueChange={v => setPeriod(v as any)} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 rounded-xl">
                     <TabsTrigger value="daily" className="rounded-lg">Daily</TabsTrigger>
                     <TabsTrigger value="weekly" className="rounded-lg">Weekly</TabsTrigger>
@@ -207,23 +213,13 @@ const AdminLeaderboard = () => {
                   <Calendar className="h-4 w-4" />
                   Date
                 </label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="rounded-xl"
-                />
+                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
             </div>
 
             {/* Refresh Button */}
             <div>
               <label className="text-sm font-medium mb-2 block opacity-0">Actions</label>
-                <Button
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  variant="outline"
-                  className="w-full rounded-xl"
-                >
+                <Button onClick={handleRefresh} disabled={refreshing} variant="outline" className="w-full rounded-xl">
                   <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
@@ -233,24 +229,8 @@ const AdminLeaderboard = () => {
               <div>
                 <label className="text-sm font-medium mb-2 block opacity-0">Export</label>
                 <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleExport('csv')}
-                    variant="secondary"
-                    size="sm"
-                    className="flex-1 rounded-xl"
-                  >
-                    <Download className="h-4 w-4 mr-1" />
-                    CSV
-                  </Button>
-                  <Button
-                    onClick={() => handleExport('json')}
-                    variant="secondary"
-                    size="sm"
-                    className="flex-1 rounded-xl"
-                  >
-                    <Download className="h-4 w-4 mr-1" />
-                    JSON
-                  </Button>
+                  
+                  
                 </div>
               </div>
             </div>
@@ -266,12 +246,9 @@ const AdminLeaderboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="text-center py-12">
+            {loading ? <div className="text-center py-12">
                 <p className="text-muted-foreground">Loading leaderboard...</p>
-              </div>
-            ) : metrics.length === 0 ? (
-              <div className="text-center py-12">
+              </div> : metrics.length === 0 ? <div className="text-center py-12">
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">
                   No data available for this period
@@ -279,26 +256,15 @@ const AdminLeaderboard = () => {
                 <Button onClick={handleRefresh} variant="outline">
                   Generate Snapshot
                 </Button>
-              </div>
-            ) : (
-              <>
+              </div> : <>
                 <div className="space-y-3">
                   {metrics.map((student, idx) => {
-                    const rank = page * pageSize + idx + 1;
-                    const badge = getRankBadge(rank);
-                    return (
-                      <div
-                        key={student.studentId}
-                        onClick={() => {
-                          setSelectedStudent(student);
-                          setStudentModalOpen(true);
-                        }}
-                        className={`flex items-center gap-4 p-4 rounded-xl transition-all cursor-pointer ${
-                          rank <= 3
-                            ? "bg-gradient-to-r from-primary/5 to-accent/5 border-2 border-primary/20 hover:border-primary/40"
-                            : "bg-accent/5 hover:bg-accent/10 border border-border"
-                        }`}
-                      >
+                const rank = page * pageSize + idx + 1;
+                const badge = getRankBadge(rank);
+                return <div key={student.studentId} onClick={() => {
+                  setSelectedStudent(student);
+                  setStudentModalOpen(true);
+                }} className={`flex items-center gap-4 p-4 rounded-xl transition-all cursor-pointer ${rank <= 3 ? "bg-gradient-to-r from-primary/5 to-accent/5 border-2 border-primary/20 hover:border-primary/40" : "bg-accent/5 hover:bg-accent/10 border border-border"}`}>
                         {/* Rank Badge */}
                         <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 font-bold text-lg ${badge.bg}`}>
                           {badge.icon}
@@ -321,37 +287,23 @@ const AdminLeaderboard = () => {
                             Rank #{rank}
                           </Badge>
                         </div>
-                      </div>
-                    );
-                  })}
+                      </div>;
+              })}
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-6 pt-6 border-t">
-                    <Button
-                      onClick={() => setPage(p => Math.max(0, p - 1))}
-                      disabled={page === 0}
-                      variant="outline"
-                      className="rounded-xl"
-                    >
+                {totalPages > 1 && <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                    <Button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} variant="outline" className="rounded-xl">
                       Previous
                     </Button>
                     <span className="text-sm text-muted-foreground">
                       Page {page + 1} of {totalPages}
                     </span>
-                    <Button
-                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={page >= totalPages - 1}
-                      variant="outline"
-                      className="rounded-xl"
-                    >
+                    <Button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} variant="outline" className="rounded-xl">
                       Next
                     </Button>
-                  </div>
-                )}
-              </>
-            )}
+                  </div>}
+              </>}
           </CardContent>
         </Card>
       </div>
@@ -397,8 +349,6 @@ const AdminLeaderboard = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminLeaderboard;

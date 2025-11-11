@@ -140,6 +140,13 @@ ${params.ayurvedicContext?.specialModality ? `- specialModality: ${params.ayurve
 - tone: "Ayurvedic clinical, calm, mentor-like"
 - localContext: "India, outpatient primary care"
 
+**CRITICAL FOR CLINICAL REASONING**: Include UNRELATED/NORMAL findings to test discriminative thinking:
+- Add at least 1-2 physical examination findings that are NORMAL or UNRELATED to the diagnosis (e.g., "Cardiovascular: S1 S2 normal, no murmurs" for a respiratory case)
+- Add at least 1-2 lab tests that are NORMAL or UNRELATED to the diagnosis (e.g., "Liver function tests: Normal" for a fever case, "Blood glucose: 95 mg/dL - Normal" for non-metabolic cases)
+- These distractor findings should be clinically appropriate but not diagnostically relevant
+- Use normalized, realistic values (e.g., BP: 120/80 mmHg, Hemoglobin: 13.5 g/dL - Normal range)
+- This tests whether students can identify relevant vs. irrelevant clinical data
+
 **CRITICAL FOR DIAGNOSIS OPTIONS**: You MUST generate exactly 4 diagnosis options with SPECIFIC, REALISTIC NAMES:
 - Option D1 (isCorrect: true): The CORRECT primary diagnosis with full Ayurvedic/biomedical name (e.g., "Pittaja Jwara - Pitta dominant fever")
 - Option D2 (isCorrect: false): First differential diagnosis with specific name (e.g., "Kaphaja Jwara - Kapha fever")
@@ -175,8 +182,18 @@ Required JSON structure:
   "vitals": { "key": "value" pairs },
   "script": {
     "history": { "question": "response" pairs },
-    "onRequestExam": { "exam": "findings" pairs },
-    "labsOnOrder": { "test": "result" pairs },
+    "onRequestExam": { 
+      "relevant_finding_1": "findings related to diagnosis",
+      "relevant_finding_2": "findings related to diagnosis",
+      "unrelated_finding_1": "Normal cardiovascular examination: S1 S2 normal, no murmurs",
+      "unrelated_finding_2": "Normal neurological examination: Cranial nerves intact, reflexes 2+ bilaterally"
+    },
+    "labsOnOrder": { 
+      "relevant_test_1": "abnormal result supporting diagnosis",
+      "relevant_test_2": "abnormal result supporting diagnosis",
+      "unrelated_test_1": "Blood glucose: 95 mg/dL (Normal: 70-100 mg/dL)",
+      "unrelated_test_2": "Liver function tests: AST 28 U/L, ALT 32 U/L (Normal range)"
+    },
     "dynamicTriggers": { "trigger": ["responses"] }
   },
   "diagnosisOptions": [

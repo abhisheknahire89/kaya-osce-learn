@@ -76,7 +76,7 @@ const Debrief = () => {
       if (runError) throw runError;
       if (!run) throw new Error("Run not found");
 
-      const scoreData = run.score_json as any;
+      const scoreData = (run.score_json as any) || {};
       const clinicalData = run.assignments?.cases?.clinical_json as any;
       const timeTaken =
         run.start_at && run.end_at
@@ -87,41 +87,23 @@ const Debrief = () => {
 
       console.log("Debrief data:", { scoreData, clinicalData, run });
 
-      // Process rubric data
-      const rubric = scoreData?.rubric || [];
-      console.log("Rubric data:", rubric);
-      
-      const missedItems =
-        rubric.flatMap((section: any) =>
-          section.items
-            ?.filter((item: any) => !item.achieved)
-            .map((item: any) => ({
-              id: item.id,
-              text: item.text,
-              tip: item.tip || "Review this competency",
-              resource: getReferenceForTopic(item.text),
-            }))
-        ) || [];
-      
-      console.log("Missed items:", missedItems);
-
-      // Extract learning pearls and reasoning
-      const learningPearls =
-        clinicalData?.learningPearls || [
-          {
-            text: "Review case competencies and clinical reasoning pathways",
-            ref: "Clinical Methods in Ayurveda",
-          },
-        ];
-      const stepwiseReasoning =
-        scoreData?.reasoning || [
-          "Review the clinical approach for this case type",
-          "Practice systematic history taking and examination",
-          "Study relevant Ayurvedic principles and modern correlations",
-        ];
-      
-      console.log("Learning pearls:", learningPearls);
-      console.log("Stepwise reasoning:", stepwiseReasoning);
+      // Normalize score fields from different backends
+      const score = scoreData?.score ?? scoreData?.totalPoints ?? 0;
+      const maxScore = scoreData?.maxScore ?? scoreData?.maxPoints ?? 0;
+      const percent = scoreData?.percent ?? scoreData?.percentage ?? (maxScore > 0 ? Math.round((score / maxScore) * 100) : 0);
+      const rubric = scoreData?.rubric ?? scoreData?.sections ?? [];
+      const missedChecklist = scoreData?.missedChecklist ?? scoreData?.missedItems ?? [];
+      const stepwiseReasoning = scoreData?.stepwiseReasoning ?? scoreData?.reasoning ?? [
+        "Review the clinical approach for this case type",
+        "Practice systematic history taking and examination",
+        "Study relevant Ayurvedic principles and modern correlations",
+      ];
+      const learningPearls = scoreData?.learningPearls ?? scoreData?.pearls ?? [
+        {
+          text: "Review case competencies and clinical reasoning pathways",
+          ref: "Clinical Methods in Ayurveda",
+        },
+      ];
 
       // Get remediation MCQs
       const { data: mcqsData } = await supabase
@@ -144,11 +126,11 @@ const Debrief = () => {
 
       const grade =
         scoreData?.grade ||
-        (scoreData?.percent >= 85
+        (percent >= 85
           ? "Distinction"
-          : scoreData?.percent >= 70
+          : percent >= 70
           ? "Pass"
-          : scoreData?.percent >= 50
+          : percent >= 50
           ? "Borderline"
           : "Fail");
 
@@ -156,17 +138,17 @@ const Debrief = () => {
         runId: run.id,
         caseId: run.assignments?.case_id || "",
         studentId: run.student_id,
-        score: scoreData?.score || 0,
-        maxScore: scoreData?.maxScore || 0,
-        percent: scoreData?.percent || 0,
+        score,
+        maxScore,
+        percent,
         grade,
         timeTakenSec: timeTaken,
         rubric,
-        missedChecklist: missedItems,
+        missedChecklist,
         stepwiseReasoning,
         learningPearls,
         mcqs,
-        audit: scoreData?.audit || {},
+        audit: scoreData?.audit || { modelMatches: scoreData?.llmMatches || [] },
       };
 
       console.log("Final debrief data:", debriefData);

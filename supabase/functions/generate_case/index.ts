@@ -155,6 +155,16 @@ ${params.ayurvedicContext?.specialModality ? `- specialModality: ${params.ayurve
 - tone: "Ayurvedic clinical, calm, mentor-like"
 - localContext: "India, outpatient primary care"
 
+**CRITICAL FOR REALISTIC CASE GENERATION**:
+- Use DIVERSE, REALISTIC INDIAN NAMES (avoid generic "Raj Kumar" or "Priya Sharma" - use variety like Arjun Deshmukh, Lakshmi Iyer, Mohammed Ansari, Gurpreet Kaur, etc.)
+- Vary AGE appropriately for the condition (not always 45-50 years - use full spectrum: young adults, middle-aged, elderly)
+- Vary GENDER realistically (not always male - balance male/female/other as clinically appropriate)
+- Include CONTEXTUAL DETAILS: occupation (farmer, teacher, IT professional, homemaker, student), lifestyle habits, geographic location within India (urban/rural, specific regions)
+- Create NATURALISTIC PRESENTATIONS: avoid textbook-perfect symptom clusters, add realistic variations in timeline, severity, associated complaints
+- Add REALISTIC AMBIGUITY: some symptoms may overlap with differentials, timing may be imprecise ("a few days ago" not "exactly 72 hours"), patient may not recall all details perfectly
+- Include CULTURAL/SOCIAL CONTEXT: dietary habits, work stress, family dynamics, seasonal factors, local health beliefs that influence presentation
+- Make each case UNIQUE: vary chief complaints phrasing, symptom combinations, examination findings - no two cases should feel identical
+
 **CRITICAL FOR CLINICAL REASONING**: Include UNRELATED/NORMAL findings to test discriminative thinking:
 - Add at least 1-2 physical examination findings that are NORMAL or UNRELATED to the diagnosis (e.g., "Cardiovascular: S1 S2 normal, no murmurs" for a respiratory case)
 - Add at least 1-2 lab tests that are NORMAL or UNRELATED to the diagnosis (e.g., "Liver function tests: Normal" for a fever case, "Blood glucose: 95 mg/dL - Normal" for non-metabolic cases)

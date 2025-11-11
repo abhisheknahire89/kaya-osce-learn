@@ -20,7 +20,7 @@ export const DashboardHeader = () => {
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <img src={kayaLogo} alt="Kaya Logo" className="h-10 w-auto flex-shrink-0" />
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-foreground truncate">Namaste{user?.user_metadata?.name || "Faculty"}
+            <h1 className="text-xl font-bold text-foreground truncate">Namaste, Arnav Patil{user?.user_metadata?.name || "Faculty"}
             </h1>
             <p className="text-xs text-muted-foreground truncate" lang="hi">
               काय चिकित्सक शिक्षण कक्ष

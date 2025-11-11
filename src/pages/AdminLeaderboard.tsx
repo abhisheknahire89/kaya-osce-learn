@@ -180,13 +180,7 @@ const AdminLeaderboard = () => {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">Leaderboard
-श्रेणी सूची<Trophy className="h-8 w-8 text-primary" />
-            Admin — Leaderboard
-            <span className="text-base font-normal text-muted-foreground ml-2" lang="hi">
-              श्रेणी सूची
-            </span>
-          </h1>
+          
           <p className="text-muted-foreground mt-1">
             Student performance rankings based on OSCE scores
           </p>

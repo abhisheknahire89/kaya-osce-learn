@@ -1,33 +1,56 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Reference citation helper
+// Reference citation helper - uses comprehensive Ayurvedic reference library
 const getCitationForTopic = (topic: string): string => {
   const topicLower = topic.toLowerCase();
 
-  if (topicLower.includes("agni") || topicLower.includes("appetite")) {
-    return "Charaka Samhita — Vimana Sthana";
+  // Map clinical topics to appropriate textbook citations
+  if (topicLower.includes("agni") || topicLower.includes("appetite") || topicLower.includes("digestion")) {
+    return "Dravyaguna Vigyana by Acharya Priyavrata Sharma, Chaukhambha Bharti Academy, Varanasi";
   }
   if (topicLower.includes("nadi") || topicLower.includes("pulse")) {
-    return "Science of Nadi Vijnana — Clinical Applications";
+    return "Dravyagunavijnana by Prof. D.S. Lucas, Chaukhambha Visvabharati, Varanasi";
   }
-  if (topicLower.includes("jwara") || topicLower.includes("fever")) {
-    return "Kayachikitsa: Principles and Practice — Chapter on Jwara";
+  if (topicLower.includes("jwara") || topicLower.includes("fever") || topicLower.includes("pitta")) {
+    return "Bhavaprakasha by Sri Brahmasankara Mishra, Chaukhamba Sanskrit Series Office, Varanasi";
   }
-  if (topicLower.includes("socrates") || topicLower.includes("history")) {
-    return "Clinical Methods in Ayurveda — History Taking";
+  if (topicLower.includes("socrates") || topicLower.includes("history") || topicLower.includes("onset")) {
+    return "Introduction to Dravyaguna by Acharya Priyavrata Sharma, Chaukhambha Orientalia, Varanasi";
   }
   if (topicLower.includes("physical exam") || topicLower.includes("examination")) {
-    return "Clinical Methods in Ayurveda — Physical Examination Methods";
+    return "Dravyagunavijnana by Prof. D.S. Lucas, Chaukhambha Visvabharati, Varanasi";
+  }
+  if (topicLower.includes("lab") || topicLower.includes("test") || topicLower.includes("investigation")) {
+    return "Essentials of Medical Pharmacology by K.D. Tripathi, Jaypee Brothers Medical Publishers";
   }
   if (topicLower.includes("diagnosis") || topicLower.includes("differential")) {
-    return "Clinical Methods in Ayurveda — Diagnostic Reasoning";
+    return "Ayurvedic Pharmacology & Therapeutic Uses of Medicinal Plants by Vaidya V.M. Gogte, Chaukhambha Publications";
   }
-  if (topicLower.includes("osce") || topicLower.includes("assessment")) {
-    return "Virtual OSCE Guidelines — Rubric Development";
+  if (topicLower.includes("management") || topicLower.includes("treatment") || topicLower.includes("therapy")) {
+    return "Ayurvediya Aushadkarma Vigyana by Acharya V.J. Thakar, Gujarat Ayurveda University, Jamnagar";
+  }
+  if (topicLower.includes("cooling") || topicLower.includes("ors") || topicLower.includes("hydration")) {
+    return "Evidence-Based Validation of Herbal Medicine by Pulok K. Mukherjee, Elsevier Science";
+  }
+  if (topicLower.includes("rasa") || topicLower.includes("taste")) {
+    return "Raspanchaka by Prof. Shiv Charan Dhyani, Chaukhambha Krishnadas Academy, Varanasi";
+  }
+  if (topicLower.includes("vipaka") || topicLower.includes("virya") || topicLower.includes("prabhava")) {
+    return "Research Updates of Vipaka by Vaidyabhushanam K. Raghavan Tirumulpad, Arya Vaidya Sala, Kottakkal";
+  }
+  if (topicLower.includes("guna") || topicLower.includes("properties")) {
+    return "Dravyaguna Siddhanta by Prof. Shiv Charan Dhyani, Chaukhambha Krishnadas Academy, Varanasi";
+  }
+  if (topicLower.includes("communication") || topicLower.includes("rapport")) {
+    return "Classical Uses of Medicinal Plants by Acharya Priyavrata Sharma, Chaukhamba Visvabharati, Varanasi";
+  }
+  if (topicLower.includes("osce") || topicLower.includes("assessment") || topicLower.includes("rubric")) {
+    return "A Text Book of Dravyaguna Vijnana by Dr. Prakash L. Hegde and Dr. Harini A., Chaukhambha Publications";
   }
 
-  return "Clinical Methods in Ayurveda";
+  // Default comprehensive reference
+  return "Dravyaguna Vigyana by Acharya Priyavrata Sharma, Chaukhambha Bharti Academy, Varanasi";
 };
 
 const corsHeaders = {

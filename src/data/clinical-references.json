@@ -1,0 +1,440 @@
+{
+  "references": [
+    {
+      "id": "ref_001",
+      "title": "Dravya Guna Shastram",
+      "type": "Book",
+      "authors": "Vaidya G.A. Phadke",
+      "publisher": "Pradnya Mudranalaya, Vaidya Vamanrao Deenanath Shuddhaaayurved Pathyakrama Samitee",
+      "location": "Mumbai",
+      "topics": ["dravyaguna", "pharmacology"]
+    },
+    {
+      "id": "ref_002",
+      "title": "Bhavaprakasha",
+      "type": "Book",
+      "authors": "Sri Brahmasankara Mishra and Sri Rupalalaji Vaishya",
+      "publisher": "Chaukhamba Sanskrit Series Office",
+      "location": "Varanasi",
+      "topics": ["classical_text", "materia_medica"]
+    },
+    {
+      "id": "ref_003",
+      "title": "Aushadhi Vigyna Shastra (Ayurvedic Pharmacology)",
+      "type": "Book",
+      "authors": "Sri Vishvanatha Dwivedi",
+      "publisher": "Shri Baidyanath Ayurved Bhavan Pvt. Ltd.",
+      "location": "Nagpur",
+      "topics": ["pharmacology"]
+    },
+    {
+      "id": "ref_004",
+      "title": "Ayurvediya Aushadkarma Vigyana",
+      "type": "Book",
+      "authors": "Acharya V.J. Thakar",
+      "publisher": "Gujarat Ayurveda University",
+      "location": "Jamnagar",
+      "topics": ["pharmaceutical_processes"]
+    },
+    {
+      "id": "ref_005",
+      "title": "Bhava Prakash Nighantu",
+      "type": "Book",
+      "authors": "Vd. Krishna Chandra Chunekar Commentary",
+      "publisher": "Chaukhambha Sanskrit Sansthan",
+      "location": "Varanasi",
+      "topics": ["nighantu", "materia_medica"]
+    },
+    {
+      "id": "ref_006",
+      "title": "Classical Uses of Medicinal Plants",
+      "type": "Book",
+      "authors": "Acharya Priyavrata Sharma",
+      "publisher": "Chaukhamba Visvabharati",
+      "location": "Varanasi",
+      "topics": ["medicinal_plants"]
+    },
+    {
+      "id": "ref_007",
+      "title": "Some Controversial Drugs in Indian Medicine",
+      "type": "Book",
+      "authors": "Dr. Bapalal Vaidya",
+      "publisher": "Chaukhambha Orientalia",
+      "location": "Varanasi",
+      "topics": ["drug_identification"]
+    },
+    {
+      "id": "ref_008",
+      "title": "Dravyaguna Kosha",
+      "type": "Book",
+      "authors": "Acharya Priyavrata Sharma",
+      "publisher": "Chaukhambha Orientalia",
+      "location": "Delhi",
+      "topics": ["dravyaguna", "encyclopedia"]
+    },
+    {
+      "id": "ref_009",
+      "title": "Dravyaguna Vigyana (Vol. 1–3)",
+      "type": "Book",
+      "authors": "Dr. Gyanendra Pandey",
+      "publisher": "Chaukhambha Krishnadas Academy",
+      "location": "Varanasi",
+      "topics": ["dravyaguna"]
+    },
+    {
+      "id": "ref_010",
+      "title": "Dravyaguna Vigyana (Vol. 1–2)",
+      "type": "Book",
+      "authors": "Acharya Yadavji Tikaramji",
+      "publisher": "Baidyanath Ayurved Bhavan Ltd.",
+      "topics": ["dravyaguna"]
+    },
+    {
+      "id": "ref_011",
+      "title": "Dravyaguna Vigyana (Vol. 1–5)",
+      "type": "Book",
+      "authors": "Acharya Priyavrata Sharma",
+      "publisher": "Chaukhambha Bharti Academy",
+      "location": "Varanasi",
+      "topics": ["dravyaguna"]
+    },
+    {
+      "id": "ref_012",
+      "title": "Nighantu Adarsh (Vol. 1–2)",
+      "type": "Book",
+      "authors": "Vd. G. Bapa Lal",
+      "publisher": "Chaukhambha Bharti Academy",
+      "location": "Varanasi",
+      "topics": ["nighantu"]
+    },
+    {
+      "id": "ref_013",
+      "title": "Ayurvedic Pharmacology & Therapeutic Uses of Medicinal Plants (Dravyagunavignyan)",
+      "type": "Book",
+      "authors": "Vaidya V.M. Gogte",
+      "publisher": "Chaukhambha Publications",
+      "location": "New Delhi",
+      "topics": ["pharmacology", "medicinal_plants"]
+    },
+    {
+      "id": "ref_014",
+      "title": "Dravyagunavijnana (Part I and II)",
+      "type": "Book",
+      "authors": "Prof. D.S. Lucas",
+      "publisher": "Chaukhambha Visvabharati",
+      "location": "Varanasi",
+      "topics": ["dravyaguna"]
+    },
+    {
+      "id": "ref_015",
+      "title": "Glossary of Vegetable Drugs in Brihattrayi",
+      "type": "Book",
+      "authors": "Thakur Balwant Singh & Vd. Krishna Chandra Chunekar",
+      "publisher": "Chaukhambha Amarbharti Prakashan",
+      "location": "Varanasi",
+      "topics": ["glossary", "classical_text"]
+    },
+    {
+      "id": "ref_016",
+      "title": "Introduction to Dravyaguna (English)",
+      "type": "Book",
+      "authors": "Acharya Priyavrata Sharma",
+      "publisher": "Chaukhambha Orientalia",
+      "location": "Varanasi",
+      "topics": ["dravyaguna", "introduction"]
+    },
+    {
+      "id": "ref_017",
+      "title": "A Text Book of Dravyaguna Vijnana (Vol. 1, 2 & 3)",
+      "type": "Book",
+      "authors": "Dr. Prakash L. Hegde and Dr. Harini A.",
+      "publisher": "Chaukhambha Publications",
+      "location": "New Delhi",
+      "topics": ["dravyaguna", "textbook"]
+    },
+    {
+      "id": "ref_018",
+      "title": "Raspanchaka",
+      "type": "Book",
+      "authors": "Prof. Shiv Charan Dhyani",
+      "publisher": "Chaukhambha Krishnadas Academy",
+      "location": "Varanasi",
+      "topics": ["rasa_panchaka"]
+    },
+    {
+      "id": "ref_019",
+      "title": "Dravyaguna Siddhanta",
+      "type": "Book",
+      "authors": "Prof. Shiv Charan Dhyani",
+      "publisher": "Chaukhambha Krishnadas Academy",
+      "location": "Varanasi",
+      "topics": ["dravyaguna", "principles"]
+    },
+    {
+      "id": "ref_020",
+      "title": "The Ayurvedic Pharmacopoeia of India, Part I Vol. I–VII",
+      "type": "Book",
+      "authors": "Ministry of AYUSH, India",
+      "publisher": "Government of India",
+      "location": "New Delhi",
+      "topics": ["pharmacopoeia", "standards"]
+    },
+    {
+      "id": "ref_021",
+      "title": "Medicinal Plants Used in Ayurveda (2nd Edition)",
+      "type": "Book",
+      "authors": "Rashtriya Ayurveda Vidyapeeth",
+      "publisher": "Rashtriya Ayurveda Vidyapeeth",
+      "location": "New Delhi",
+      "topics": ["medicinal_plants"]
+    },
+    {
+      "id": "ref_022",
+      "title": "Plants of Bhavaprakash (English)",
+      "type": "Book",
+      "authors": "Prof. K.C. Chunekar & Dr. N.P. Hota",
+      "publisher": "Rashtriya Ayurveda Vidyapeeth",
+      "location": "New Delhi",
+      "topics": ["medicinal_plants", "classical_text"]
+    },
+    {
+      "id": "ref_023",
+      "title": "Database of Medicinal Plants Used in Ayurveda (Vol. 1 to 8)",
+      "type": "Book",
+      "authors": "CCRAS",
+      "publisher": "CCRAS",
+      "location": "New Delhi",
+      "topics": ["database", "medicinal_plants"]
+    },
+    {
+      "id": "ref_024",
+      "title": "A Text Book of Dravyaguna Vijnana (Vol. 1 to 2)",
+      "type": "Book",
+      "authors": "Dr. J.L.N. Sastry and Dr. Tanuja M. Nesari",
+      "topics": ["dravyaguna", "textbook"]
+    },
+    {
+      "id": "ref_025",
+      "title": "Dravyaguna Vigyana (Vol. 1 to 2)",
+      "type": "Book",
+      "authors": "Dr. Manasi Deshpande and Dr. Arvind Deshpande",
+      "publisher": "Chaukhamba Sanskrit Pratishthan",
+      "location": "New Delhi",
+      "topics": ["dravyaguna"]
+    },
+    {
+      "id": "ref_026",
+      "title": "Essentials of Medical Pharmacology",
+      "type": "Book",
+      "authors": "K.D. Tripathi",
+      "publisher": "Jaypee Brothers Medical Publishers (P) Ltd",
+      "topics": ["modern_pharmacology"]
+    },
+    {
+      "id": "ref_027",
+      "title": "Pharmacological Basis of Medical Practice",
+      "type": "Book",
+      "authors": "Goodman & Gillman",
+      "publisher": "McGraw-Hill Education",
+      "topics": ["modern_pharmacology"]
+    },
+    {
+      "id": "ref_028",
+      "title": "Pharmacology and Pharmacotherapeutics",
+      "type": "Book",
+      "authors": "Satoskar, Bhandarkar & Ainapure",
+      "publisher": "Popular Prakashan",
+      "location": "Mumbai",
+      "topics": ["modern_pharmacology"]
+    },
+    {
+      "id": "ref_029",
+      "title": "Textbook of Pharmacognosy",
+      "type": "Book",
+      "authors": "Trease & Evans",
+      "publisher": "Elsevier Publication",
+      "topics": ["pharmacognosy"]
+    },
+    {
+      "id": "ref_030",
+      "title": "Textbook of Pharmacognosy",
+      "type": "Book",
+      "authors": "Tyler, Brady & Robber",
+      "publisher": "Lea & Febiger",
+      "location": "USA",
+      "topics": ["pharmacognosy"]
+    },
+    {
+      "id": "ref_031",
+      "title": "Quality Control of Herbal Drugs: An Approach to Evaluation of Botanicals",
+      "type": "Book",
+      "authors": "Pulok K. Mukherjee",
+      "publisher": "Elsevier",
+      "topics": ["quality_control"]
+    },
+    {
+      "id": "ref_032",
+      "title": "Ausadhinamarupa Vijnanam (Vol. 1 and 2)",
+      "type": "Book",
+      "authors": "Dr. Sanjeev Kumar Lale & Mr. Hemraj Lale",
+      "location": "Indore",
+      "topics": ["drug_identification"]
+    },
+    {
+      "id": "ref_033",
+      "title": "Practical Pharmacognosy",
+      "type": "Book",
+      "authors": "Dr. K.R. Khandelwal and Dr. Vrunda Sethi",
+      "publisher": "Nirali Prakashan",
+      "location": "Pune",
+      "topics": ["pharmacognosy", "practical"]
+    },
+    {
+      "id": "ref_034",
+      "title": "Pharmacognosy",
+      "type": "Book",
+      "authors": "S.B. Gokhale, C.K. Kokate, and A.P. Purohit",
+      "topics": ["pharmacognosy"]
+    },
+    {
+      "id": "ref_035",
+      "title": "Botany of Commonly Used Medicinal Plants with Diagnostic Keys",
+      "type": "Book",
+      "authors": "Dr. Hema Sane and Dr. Yogini Kulkarni",
+      "publisher": "Vision Publication",
+      "location": "Pune",
+      "topics": ["botany", "medicinal_plants"]
+    },
+    {
+      "id": "ref_036",
+      "title": "Basic Bioinformatics",
+      "type": "Book",
+      "authors": "S. Gladis Hepsyba Helen",
+      "publisher": "MJP Publishers",
+      "topics": ["bioinformatics"]
+    },
+    {
+      "id": "ref_037",
+      "title": "Pharmacovigilance in Ayurveda",
+      "type": "Book",
+      "authors": "Manjunath Ajanal, B.S. Prasad, Shreddha U. Nayak",
+      "publisher": "Chaukhambha Prakashak",
+      "location": "Varanasi",
+      "topics": ["pharmacovigilance", "safety"]
+    },
+    {
+      "id": "ref_038",
+      "title": "Cultivation of Medicinal and Aromatic Crops",
+      "type": "Book",
+      "authors": "Azhar Ali Farooqi & B.S. Sreeramu",
+      "publisher": "Universities Press (India) Pvt. Ltd.",
+      "location": "Hyderabad",
+      "topics": ["cultivation"]
+    },
+    {
+      "id": "ref_039",
+      "title": "WHO Guidelines on Good Agricultural and Collection Practices (GACP) for Medicinal Plants",
+      "type": "Book",
+      "authors": "World Health Organization",
+      "publisher": "WHO",
+      "location": "Geneva",
+      "topics": ["guidelines", "agriculture"]
+    },
+    {
+      "id": "ref_040",
+      "title": "Medicinal Plants: Biodiversity, Sustainable Utilization and Conservation",
+      "type": "Book",
+      "authors": "K. Thammasiri, Chunlin Long, Henrik Lutken, Shaik Mahammad Khasim",
+      "publisher": "Springer Link",
+      "topics": ["conservation", "biodiversity"]
+    },
+    {
+      "id": "ref_041",
+      "title": "Network Pharmacology",
+      "type": "Book",
+      "authors": "Shao Li",
+      "publisher": "Springer Link",
+      "topics": ["modern_pharmacology", "network_analysis"]
+    },
+    {
+      "id": "ref_042",
+      "title": "Vrikshayurveda – Ancient Science of Plant Life and Plant Care",
+      "type": "Book",
+      "authors": "S. Rajasekharan, G.S. Unnikrishnan Nair",
+      "publisher": "Kerala State Biodiversity Board",
+      "location": "Kerala",
+      "topics": ["plant_science"]
+    },
+    {
+      "id": "ref_043",
+      "title": "Evidence-Based Validation of Herbal Medicine – Translational Research on Botanicals",
+      "type": "Book",
+      "authors": "Pulok K. Mukherjee",
+      "publisher": "Elsevier Science",
+      "topics": ["research", "validation"]
+    },
+    {
+      "id": "ref_044",
+      "title": "Rasavaiseshika & Research Updates of Gurvaguna",
+      "type": "Book",
+      "authors": "Vaidyabhushanam K. Raghavan Tirumulpad",
+      "publisher": "Arya Vaidya Sala",
+      "location": "Kottakkal, Kerala",
+      "topics": ["gurvaguna", "guna_siddhanta"]
+    },
+    {
+      "id": "ref_045",
+      "title": "Research Updates of Paradiguna",
+      "type": "Book",
+      "authors": "Vaidyabhushanam K. Raghavan Tirumulpad",
+      "publisher": "Arya Vaidya Sala",
+      "location": "Kottakkal, Kerala",
+      "topics": ["paradiguna", "guna_siddhanta"]
+    },
+    {
+      "id": "ref_046",
+      "title": "Research Updates of Shadrasa",
+      "type": "Book",
+      "authors": "Vaidyabhushanam K. Raghavan Tirumulpad",
+      "publisher": "Arya Vaidya Sala",
+      "location": "Kottakkal, Kerala",
+      "topics": ["rasa", "taste"]
+    },
+    {
+      "id": "ref_047",
+      "title": "Research Updates of Vipaka",
+      "type": "Book",
+      "authors": "Vaidyabhushanam K. Raghavan Tirumulpad",
+      "publisher": "Arya Vaidya Sala",
+      "location": "Kottakkal, Kerala",
+      "topics": ["vipaka", "post_digestive_effect"]
+    },
+    {
+      "id": "ref_048",
+      "title": "Research Updates of Virya",
+      "type": "Book",
+      "authors": "Vaidyabhushanam K. Raghavan Tirumulpad",
+      "publisher": "Arya Vaidya Sala",
+      "location": "Kottakkal, Kerala",
+      "topics": ["virya", "potency"]
+    },
+    {
+      "id": "ref_049",
+      "title": "Research Updates of Prabhava",
+      "type": "Book",
+      "authors": "Vaidyabhushanam K. Raghavan Tirumulpad",
+      "publisher": "Arya Vaidya Sala",
+      "location": "Kottakkal, Kerala",
+      "topics": ["prabhava", "specific_action"]
+    },
+    {
+      "id": "ref_050",
+      "title": "Research Updates of Karma",
+      "type": "Book",
+      "authors": "Vaidyabhushanam K. Raghavan Tirumulpad",
+      "publisher": "Arya Vaidya Sala",
+      "location": "Kottakkal, Kerala",
+      "topics": ["karma", "pharmacological_action"]
+    }
+  ]
+}

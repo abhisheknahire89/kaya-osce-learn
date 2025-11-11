@@ -7,6 +7,7 @@ import { TopMicroHeader } from "@/components/layout/TopMicroHeader";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, X, Loader2 } from "lucide-react";
+import { getReferenceForTopic, getCitationForArea } from "@/lib/clinical-references";
 
 interface DebriefData {
   runId: string;
@@ -98,7 +99,7 @@ const Debrief = () => {
               id: item.id,
               text: item.text,
               tip: item.tip || "Review this competency",
-              resource: item.reference || "Clinical Methods in Ayurveda",
+              resource: getReferenceForTopic(item.text),
             }))
         ) || [];
       

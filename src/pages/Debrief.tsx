@@ -84,8 +84,12 @@ const Debrief = () => {
             )
           : 0;
 
+      console.log("Debrief data:", { scoreData, clinicalData, run });
+
       // Process rubric data
       const rubric = scoreData?.rubric || [];
+      console.log("Rubric data:", rubric);
+      
       const missedItems =
         rubric.flatMap((section: any) =>
           section.items
@@ -97,6 +101,8 @@ const Debrief = () => {
               resource: item.reference || "Clinical Methods in Ayurveda",
             }))
         ) || [];
+      
+      console.log("Missed items:", missedItems);
 
       // Extract learning pearls and reasoning
       const learningPearls =
@@ -112,6 +118,9 @@ const Debrief = () => {
           "Practice systematic history taking and examination",
           "Study relevant Ayurvedic principles and modern correlations",
         ];
+      
+      console.log("Learning pearls:", learningPearls);
+      console.log("Stepwise reasoning:", stepwiseReasoning);
 
       // Get remediation MCQs
       const { data: mcqsData } = await supabase
@@ -159,6 +168,7 @@ const Debrief = () => {
         audit: scoreData?.audit || {},
       };
 
+      console.log("Final debrief data:", debriefData);
       setDebriefData(debriefData);
     } catch (error) {
       toast({
@@ -226,38 +236,42 @@ const Debrief = () => {
         {/* 1) OSCE Feedback — per rubric section */}
         <Card className="p-4">
           <h3 className="font-semibold mb-3">1) OSCE feedback — per rubric section</h3>
-          <div className="space-y-3">
-            {debriefData.rubric.map((section, idx) => (
-              <div key={idx} className="border-l-2 border-primary/30 pl-3">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-semibold">{section.section}</p>
-                  <Badge variant="outline" className="text-xs">
-                    {section.score}/{section.max}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Missed:{" "}
-                  {section.items.filter((item: any) => !item.achieved).length === 0
-                    ? "All items completed"
-                    : `${section.items.filter((item: any) => !item.achieved).length} item(s)`}
-                </p>
-                {section.items.filter((item: any) => !item.achieved).length > 0 && (
-                  <div className="space-y-1 mt-2">
-                    {section.items
-                      .filter((item: any) => !item.achieved)
-                      .map((item: any, itemIdx: number) => (
-                        <div key={itemIdx} className="flex items-start gap-2">
-                          <X className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
-                          <p className="text-xs">
-                            {item.id} — {item.text}
-                          </p>
-                        </div>
-                      ))}
+          {debriefData.rubric.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No rubric data available</p>
+          ) : (
+            <div className="space-y-3">
+              {debriefData.rubric.map((section, idx) => (
+                <div key={idx} className="border-l-2 border-primary/30 pl-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-semibold">{section.section}</p>
+                    <Badge variant="outline" className="text-xs">
+                      {section.score}/{section.max}
+                    </Badge>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Missed:{" "}
+                    {section.items.filter((item: any) => !item.achieved).length === 0
+                      ? "All items completed"
+                      : `${section.items.filter((item: any) => !item.achieved).length} item(s)`}
+                  </p>
+                  {section.items.filter((item: any) => !item.achieved).length > 0 && (
+                    <div className="space-y-1">
+                      {section.items
+                        .filter((item: any) => !item.achieved)
+                        .map((item: any, itemIdx: number) => (
+                          <div key={itemIdx} className="flex items-start gap-2">
+                            <X className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
+                            <p className="text-xs">
+                              {item.id} — {item.text}
+                            </p>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* 2) Missed-item checklist (tappable items) */}
@@ -279,8 +293,8 @@ const Debrief = () => {
                       <p className="text-sm">{item.text}</p>
                       {expandedMissed[idx] && (
                         <div className="mt-2 pt-2 border-t space-y-1">
-                          <p className="text-xs text-muted-foreground">💡 {item.tip}</p>
-                          <p className="text-xs text-primary">📖 {item.resource}</p>
+                          <p className="text-xs text-muted-foreground">💡 Tip: {item.tip}</p>
+                          <p className="text-xs text-primary">📖 Read: {item.resource}</p>
                         </div>
                       )}
                     </div>
@@ -306,7 +320,7 @@ const Debrief = () => {
 
         {/* 4) 3 short learning pearls (1-line each) + single-line reading citation */}
         <Card className="p-4">
-          <h3 className="font-semibold mb-3">4) Learning pearls</h3>
+          <h3 className="font-semibold mb-3">4) Learning pearls (1-line each)</h3>
           <div className="space-y-2">
             {debriefData.learningPearls
               .filter((pearl) => !pearl.ref?.includes("NCISM CBDC"))
@@ -315,7 +329,7 @@ const Debrief = () => {
                 <div key={idx} className="text-sm">
                   <span className="font-medium">Pearl {idx + 1}:</span> {pearl.text}
                   {pearl.ref && (
-                    <span className="text-xs text-primary ml-1">— (Read: {pearl.ref})</span>
+                    <span className="text-xs text-primary"> — (Read: {pearl.ref})</span>
                   )}
                 </div>
               ))}
@@ -325,51 +339,51 @@ const Debrief = () => {
         {/* 5) 3 remediation MCQs (short) — include correct answer + 1-line rationale */}
         <Card className="p-4">
           <h3 className="font-semibold mb-3">5) Remediation MCQs</h3>
-          <div className="space-y-4">
-            {debriefData.mcqs.slice(0, 3).map((mcq, mcqIdx) => (
-              <div key={mcqIdx} className="space-y-2">
-                <p className="text-sm font-medium">
-                  Q{mcqIdx + 1}: {mcq.stem}
-                </p>
-                <div className="space-y-1">
-                  {mcq.choices.map((choice: string, choiceIdx: number) => {
-                    const isCorrect = choiceIdx === mcq.correctIndex;
-                    const isSelected = selectedMCQ[mcqIdx] === choiceIdx;
+          {debriefData.mcqs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No remediation questions available</p>
+          ) : (
+            <div className="space-y-4">
+              {debriefData.mcqs.slice(0, 3).map((mcq, mcqIdx) => (
+                <div key={mcqIdx} className="space-y-2">
+                  <p className="text-sm font-medium">
+                    Q{mcqIdx + 1}: {mcq.stem}
+                  </p>
+                  <div className="space-y-1">
+                    {mcq.choices.map((choice: string, choiceIdx: number) => {
+                      const isCorrect = choiceIdx === mcq.correctIndex;
 
-                    return (
-                      <div
-                        key={choiceIdx}
-                        className={`p-2 rounded cursor-pointer text-sm ${
-                          isSelected
-                            ? isCorrect
+                      return (
+                        <div
+                          key={choiceIdx}
+                          className={`p-2 rounded text-sm ${
+                            isCorrect
                               ? "bg-green-100 border border-green-300"
-                              : "bg-red-100 border border-red-300"
-                            : "bg-accent/30 hover:bg-accent/50"
-                        }`}
-                        onClick={() => handleMCQAnswer(mcqIdx, choiceIdx)}
-                      >
-                        <div className="flex items-center gap-2">
-                          {isCorrect && (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          )}
-                          <span className="font-medium">
-                            {String.fromCharCode(65 + choiceIdx)})
-                          </span>
-                          <span className={isCorrect ? "font-semibold" : ""}>{choice}</span>
-                          {isCorrect && (
-                            <span className="ml-auto text-xs text-green-700">— Correct</span>
-                          )}
+                              : "bg-accent/30"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isCorrect && (
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            )}
+                            <span className="font-medium">
+                              {String.fromCharCode(65 + choiceIdx)})
+                            </span>
+                            <span className={isCorrect ? "font-semibold" : ""}>{choice}</span>
+                            {isCorrect && (
+                              <span className="ml-auto text-xs text-green-700">— Correct</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2 pl-2 border-l-2 border-primary/30">
+                    <span className="font-medium">Rationale:</span> {mcq.explanation}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground mt-2 pl-2 border-l-2 border-primary/30">
-                  <span className="font-medium">Rationale:</span> {mcq.explanation}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Action Button */}

@@ -151,6 +151,14 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/admin/generate-case" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <GenerateCase />
+                </ProtectedRoute>
+              } 
+            />
             <Route
               path="/student/assessment" 
               element={

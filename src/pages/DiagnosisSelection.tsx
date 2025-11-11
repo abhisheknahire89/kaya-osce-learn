@@ -62,8 +62,33 @@ const DiagnosisSelection = () => {
       const clinical = run.assignments?.cases?.clinical_json as any;
       setCaseData(clinical);
 
-      // Extract diagnosis options from case data - show actual diagnosis names
-      const options: DiagnosisOption[] = clinical?.diagnosisOptions || [];
+      // Build diagnosis options with robust fallbacks
+      let options: DiagnosisOption[] = [];
+
+      if (Array.isArray(clinical?.diagnosisOptions) && clinical.diagnosisOptions.length > 0) {
+        options = clinical.diagnosisOptions;
+      } else {
+        const diagFromMCQ = Array.isArray(clinical?.mcqs)
+          ? clinical.mcqs.find((q: any) => typeof q.stem === "string" && /diagnos|most likely/i.test(q.stem))
+          : null;
+
+        if (diagFromMCQ) {
+          options = (diagFromMCQ.choices || []).map((c: string, idx: number) => ({
+            id: `D${idx + 1}`,
+            text: c,
+            isCorrect: idx === (diagFromMCQ.correctIndex ?? -1),
+          }));
+        } else {
+          const titleStr = typeof clinical?.title === "string" ? clinical.title : "Primary diagnosis";
+          const primary = titleStr.split(/[—\-|:]/)[0].trim() || "Primary diagnosis";
+          options = [
+            { id: "D1", text: primary, hint: "Based on presented symptoms and findings", isCorrect: true },
+            { id: "D2", text: `${primary} (variant)`, isCorrect: false },
+            { id: "D3", text: `Non-${primary}`, isCorrect: false },
+            { id: "D4", text: "Other (enter diagnosis below)", isCorrect: false },
+          ];
+        }
+      }
 
       setDiagnosisOptions(options);
     } catch (error: any) {

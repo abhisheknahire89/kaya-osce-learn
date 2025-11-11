@@ -81,10 +81,36 @@ const ManagementPlan = () => {
       const clinical = run.assignments?.cases?.clinical_json as any;
       setCaseData(clinical);
 
-      // Set management options from case data - show actual generated options
-      const immediate: ManagementOption[] = clinical?.managementOptions || [];
-      const investigations: ManagementOption[] = [];
-      const definitive: ManagementOption[] = [];
+      // Set management options from case data (support both flat and sectioned shapes), with safe fallbacks
+      let immediate: ManagementOption[] = [];
+      let investigations: ManagementOption[] = [];
+      let definitive: ManagementOption[] = [];
+
+      const mgmt = clinical?.managementOptions;
+      if (Array.isArray(mgmt)) {
+        immediate = mgmt as ManagementOption[];
+      } else if (mgmt && typeof mgmt === "object") {
+        immediate = (mgmt.immediate as ManagementOption[]) || [];
+        investigations = (mgmt.investigations as ManagementOption[]) || [];
+        definitive = (mgmt.definitive as ManagementOption[]) || [];
+      }
+
+      if (!immediate.length && !investigations.length && !definitive.length) {
+        immediate = [
+          { id: "A1", text: "Start initial stabilization measures", section: "immediate", hint: "First-line intervention" },
+          { id: "A2", text: "Start supportive care", section: "immediate", hint: "Symptomatic relief" },
+          { id: "A3", text: "Monitor vital signs", section: "immediate", hint: "Ongoing assessment" },
+        ];
+        investigations = [
+          { id: "B1", text: "Order relevant investigations", section: "investigations" },
+          { id: "B2", text: "Perform targeted examination", section: "investigations" },
+        ];
+        definitive = [
+          { id: "C1", text: "Outpatient care with follow-up", section: "definitive" },
+          { id: "C2", text: "Admit for observation and treatment", section: "definitive" },
+          { id: "C3", text: "Refer to specialist/tertiary center", section: "definitive" },
+        ];
+      }
 
       setManagementOptions({ immediate, investigations, definitive });
     } catch (error: any) {

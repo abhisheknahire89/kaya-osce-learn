@@ -33,6 +33,43 @@ const AdminLeaderboard = () => {
   useEffect(() => {
     fetchLeaderboard();
   }, [period, date, cohortId, page]);
+
+  // Real-time subscription for simulation runs and leaderboard snapshots
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-leaderboard-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'simulation_runs'
+        },
+        (payload) => {
+          console.log('Simulation run changed:', payload);
+          // Refetch leaderboard when runs are updated
+          fetchLeaderboard();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leaderboard_snapshots'
+        },
+        (payload) => {
+          console.log('Leaderboard snapshot changed:', payload);
+          // Refetch leaderboard when snapshots are updated
+          fetchLeaderboard();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [period, date, cohortId, page]);
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);

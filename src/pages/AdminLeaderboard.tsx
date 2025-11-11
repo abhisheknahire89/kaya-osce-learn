@@ -227,9 +227,9 @@ const AdminLeaderboard = () => {
     };
   };
   const getScoreColor = (score: number) => {
-    if (score >= 85) return "text-green-600 dark:text-green-400";
-    if (score >= 70) return "text-blue-600 dark:text-blue-400";
-    if (score >= 50) return "text-yellow-600 dark:text-yellow-400";
+    if (score >= 8.5) return "text-green-600 dark:text-green-400";
+    if (score >= 7.0) return "text-blue-600 dark:text-blue-400";
+    if (score >= 5.0) return "text-yellow-600 dark:text-yellow-400";
     return "text-red-600 dark:text-red-400";
   };
   const totalPages = Math.ceil(totalStudents / pageSize);
@@ -337,8 +337,9 @@ const AdminLeaderboard = () => {
                         {/* Score */}
                         <div className="text-right">
                           <p className={`text-3xl font-bold ${getScoreColor(student.avgScore)}`}>
-                            {student.avgScore}%
+                            {student.avgScore.toFixed(1)}
                           </p>
+                          <p className="text-xs text-muted-foreground">/ 10</p>
                           <Badge variant="outline" className="mt-1 rounded-full">
                             Rank #{rank}
                           </Badge>
@@ -374,8 +375,8 @@ const AdminLeaderboard = () => {
             <div className="grid grid-cols-3 gap-4">
               <Card>
                 <CardContent className="pt-6 text-center">
-                  <p className="text-3xl font-bold text-primary">{selectedStudent?.avgScore}%</p>
-                  <p className="text-sm text-muted-foreground mt-1">Average Score</p>
+                  <p className="text-3xl font-bold text-primary">{selectedStudent?.avgScore.toFixed(1)}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Average Score / 10</p>
                 </CardContent>
               </Card>
               <Card>

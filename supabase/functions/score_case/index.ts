@@ -144,50 +144,65 @@ serve(async (req) => {
       sections.push(sectionResult);
     }
 
-    // LLM-based scoring for all items with strict evaluation
+    // OSCE-compliant LLM scoring with objective behavioral assessment
     let llmScore = 0;
     const llmMatches: any[] = [];
     
     if (missedItems.length > 0 && transcriptText.length > 10) {
-      // Build comprehensive context for scoring
+      // Build comprehensive context for OSCE-style scoring
       const actionsText = actionsArray.map((a: any) => 
         `${a.type || a.action}: ${JSON.stringify(a)}`
       ).join('\n');
 
-      const scoringPrompt = `You are a strict OSCE examiner scoring a medical student's virtual patient encounter. Be rigorous and only award points when the student clearly demonstrates the required skill.
+      const scoringPrompt = `You are an OSCE examiner scoring a medical student's virtual patient encounter using standardized OSCE methodology.
 
-EVALUATION CRITERIA:
+OSCE EVALUATION PRINCIPLES:
+- Assess OBSERVABLE BEHAVIORS only (what student actually said/did)
+- Use OBJECTIVE CRITERIA (did they perform the action? yes/no/partial)
+- Apply CONSISTENT STANDARDS across all students
+- Focus on COMPETENCY DEMONSTRATION (skill shown, not inferred)
+- Award points based on EXPLICIT EVIDENCE in transcript/actions
+
+RUBRIC CRITERIA TO EVALUATE:
 ${JSON.stringify(missedItems.map(i => ({ 
   id: i.id, 
-  criteria: i.text, 
+  criterion: i.text, 
   weight: i.weight || 1,
   section: sections.find(s => s.items.some((si: any) => si.id === i.id))?.section
 })), null, 2)}
 
-STUDENT-PATIENT CONVERSATION:
+STUDENT PERFORMANCE RECORD:
+
+Conversation Transcript:
 ${transcriptText}
 
-ACTIONS PERFORMED:
+Documented Actions:
 ${actionsText || "No documented actions"}
 
-STRICT SCORING RULES:
-- Confidence 80-100: Student clearly and explicitly demonstrated the skill
-- Confidence 50-79: Student partially demonstrated or implied the skill
-- Confidence 0-49: Student did not demonstrate the skill adequately
-- Be critical: Don't give credit for vague or incomplete attempts
-- History items require specific questions being asked
-- Exam/investigation items require explicit ordering or performing
-- Diagnosis items require clear formulation stated
-- Management items require specific treatment plans
+OSCE SCORING GUIDELINES:
+- Confidence 90-100: Criterion fully met with clear, explicit demonstration
+- Confidence 75-89: Criterion substantially met with good evidence
+- Confidence 60-74: Criterion partially met or implied but not fully demonstrated
+- Confidence 0-59: Criterion not adequately demonstrated or absent
 
-Analyze each criterion and return ONLY valid JSON:
+EVALUATION INSTRUCTIONS:
+1. For each criterion, identify specific evidence (quote what student said/did)
+2. Match evidence to criterion using objective assessment
+3. Assign confidence based on strength and clarity of demonstration
+4. History-taking: Requires specific questions asked (not just discussed)
+5. Physical exam: Requires explicit examination performed
+6. Investigations: Requires clear ordering/requesting
+7. Diagnosis: Requires explicit statement of working diagnosis
+8. Management: Requires specific treatment plan articulated
+
+Return ONLY valid JSON in this exact format:
 {
   "matches": [
     {
       "itemId": "H1",
       "demonstrated": true,
       "confidence": 85,
-      "evidence": "Student explicitly asked 'what brings you in today' establishing chief complaint"
+      "evidence": "Line 3: Student asked 'Can you tell me what brought you in today?' - explicitly elicited chief complaint"
     }
   ]
 }`;

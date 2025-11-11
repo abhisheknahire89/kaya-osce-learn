@@ -139,12 +139,19 @@ serve(async (req) => {
       console.log(`Computed metrics for ${metrics.length} students in cohort ${cohort.name}`);
 
       // Delete existing snapshot for this date/period/cohort
-      const { error: deleteError } = await supabase
+      let deleteQuery = supabase
         .from('leaderboard_snapshots')
         .delete()
         .eq('snapshot_date', snapshotDate)
-        .eq('period', period)
-        .eq('cohort_id', cohort.id || 'null');
+        .eq('period', period);
+      
+      if (cohort.id) {
+        deleteQuery = deleteQuery.eq('cohort_id', cohort.id);
+      } else {
+        deleteQuery = deleteQuery.is('cohort_id', null);
+      }
+      
+      const { error: deleteError } = await deleteQuery;
 
       if (deleteError) {
         console.error('Error deleting old snapshot:', deleteError);

@@ -9,23 +9,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/faculty/DashboardHeader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
 const AdminDashboard = () => {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [dailyLeaderboard, setDailyLeaderboard] = useState<any[]>([]);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalStudents: 0,
     activeAssessments: 0,
     avgScore: 0,
-    completionRate: 0,
+    completionRate: 0
   });
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     fetchAdminData();
   }, []);
-
   const fetchAdminData = async () => {
     try {
       setLoading(true);
@@ -36,18 +35,17 @@ const AdminDashboard = () => {
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       // Fetch all profiles first to get total students
-      const { data: allProfiles, error: allProfilesError } = await supabase
-        .from("profiles")
-        .select("id, name");
-
+      const {
+        data: allProfiles,
+        error: allProfilesError
+      } = await supabase.from("profiles").select("id, name");
       if (allProfilesError) throw allProfilesError;
 
       // Fetch all scored runs
-      const { data: allRuns, error: runsError } = await supabase
-        .from("simulation_runs")
-        .select("id, student_id, score_json, created_at, status, end_at")
-        .eq("status", "scored");
-
+      const {
+        data: allRuns,
+        error: runsError
+      } = await supabase.from("simulation_runs").select("id, student_id, score_json, created_at, status, end_at").eq("status", "scored");
       if (runsError) throw runsError;
 
       // Create a map of student profiles
@@ -61,21 +59,16 @@ const AdminDashboard = () => {
 
       // Calculate stats
       const studentsWithScores = new Set(enrichedRuns.map(r => r.student_id));
-      const scores = enrichedRuns
-        .map(r => (r.score_json as any)?.percent || 0)
-        .filter(s => s > 0);
+      const scores = enrichedRuns.map(r => (r.score_json as any)?.percent || 0).filter(s => s > 0);
       const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
       // Calculate completion rate (students who completed at least one assessment)
-      const completionRate = allProfiles?.length 
-        ? Math.round((studentsWithScores.size / allProfiles.length) * 100)
-        : 0;
-
+      const completionRate = allProfiles?.length ? Math.round(studentsWithScores.size / allProfiles.length * 100) : 0;
       setStats({
         totalStudents: allProfiles?.length || 0,
         activeAssessments: enrichedRuns.length,
         avgScore: Math.round(avgScore),
-        completionRate,
+        completionRate
       });
 
       // Build daily leaderboard
@@ -92,72 +85,77 @@ const AdminDashboard = () => {
       toast({
         title: "Failed to load admin data",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const buildLeaderboard = (runs: any[]) => {
-    const studentMap: Record<string, { name: string; scores: number[]; count: number }> = {};
-
+    const studentMap: Record<string, {
+      name: string;
+      scores: number[];
+      count: number;
+    }> = {};
     runs.forEach(run => {
       const studentId = run.student_id;
       const studentName = run.profiles?.name || "Unknown Student";
       const score = (run.score_json as any)?.percent || 0;
-
       if (!studentMap[studentId]) {
-        studentMap[studentId] = { name: studentName, scores: [], count: 0 };
+        studentMap[studentId] = {
+          name: studentName,
+          scores: [],
+          count: 0
+        };
       }
       if (score > 0) {
         studentMap[studentId].scores.push(score);
       }
       studentMap[studentId].count += 1;
     });
-
-    const leaderboard = Object.entries(studentMap)
-      .filter(([_, data]) => data.scores.length > 0)
-      .map(([studentId, data]) => ({
-        studentId,
-        name: data.name,
-        avgScore: data.scores.reduce((a, b) => a + b, 0) / data.scores.length,
-        attempts: data.count,
-      }))
-      .sort((a, b) => b.avgScore - a.avgScore);
-
+    const leaderboard = Object.entries(studentMap).filter(([_, data]) => data.scores.length > 0).map(([studentId, data]) => ({
+      studentId,
+      name: data.name,
+      avgScore: data.scores.reduce((a, b) => a + b, 0) / data.scores.length,
+      attempts: data.count
+    })).sort((a, b) => b.avgScore - a.avgScore);
     return leaderboard;
   };
-
   const getRankBadge = (rank: number) => {
-    if (rank === 1) return { icon: "🥇", variant: "default" as const };
-    if (rank === 2) return { icon: "🥈", variant: "secondary" as const };
-    if (rank === 3) return { icon: "🥉", variant: "outline" as const };
-    return { icon: rank.toString(), variant: "outline" as const };
+    if (rank === 1) return {
+      icon: "🥇",
+      variant: "default" as const
+    };
+    if (rank === 2) return {
+      icon: "🥈",
+      variant: "secondary" as const
+    };
+    if (rank === 3) return {
+      icon: "🥉",
+      variant: "outline" as const
+    };
+    return {
+      icon: rank.toString(),
+      variant: "outline" as const
+    };
   };
-
   const getGradeColor = (score: number) => {
     if (score >= 85) return "text-green-600";
     if (score >= 70) return "text-blue-600";
     if (score >= 50) return "text-yellow-600";
     return "text-red-600";
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         <DashboardHeader />
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <DashboardHeader />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -168,10 +166,7 @@ const AdminDashboard = () => {
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" className="rounded-xl">
-              <Link to="/admin/generate-case">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Generate Case
-              </Link>
+              
             </Button>
             <Button asChild className="rounded-xl bg-gradient-to-r from-primary to-[#7AA86E]">
               <Link to="/admin/leaderboard">
@@ -248,23 +243,16 @@ const AdminDashboard = () => {
               </TabsList>
 
               <TabsContent value="daily" className="mt-6">
-                {dailyLeaderboard.length === 0 ? (
-                  <Alert className="rounded-xl">
+                {dailyLeaderboard.length === 0 ? <Alert className="rounded-xl">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       No assessments completed today. Check back later!
                     </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="space-y-3">
+                  </Alert> : <div className="space-y-3">
                     {dailyLeaderboard.map((student, idx) => {
-                      const rank = idx + 1;
-                      const badge = getRankBadge(rank);
-                      return (
-                        <div
-                          key={student.studentId}
-                          className="flex items-center gap-4 p-4 bg-accent/5 rounded-xl hover:bg-accent/10 transition-colors"
-                        >
+                  const rank = idx + 1;
+                  const badge = getRankBadge(rank);
+                  return <div key={student.studentId} className="flex items-center gap-4 p-4 bg-accent/5 rounded-xl hover:bg-accent/10 transition-colors">
                           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-accent text-accent-foreground font-bold">
                             {badge.icon}
                           </div>
@@ -282,35 +270,22 @@ const AdminDashboard = () => {
                               Rank #{rank}
                             </Badge>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        </div>;
+                })}
+                  </div>}
               </TabsContent>
 
               <TabsContent value="weekly" className="mt-6">
-                {weeklyLeaderboard.length === 0 ? (
-                  <Alert className="rounded-xl">
+                {weeklyLeaderboard.length === 0 ? <Alert className="rounded-xl">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       No assessments completed this week. Check back later!
                     </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="space-y-3">
+                  </Alert> : <div className="space-y-3">
                     {weeklyLeaderboard.map((student, idx) => {
-                      const rank = idx + 1;
-                      const badge = getRankBadge(rank);
-                      return (
-                        <div
-                          key={student.studentId}
-                          className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${
-                            rank <= 3
-                              ? "bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20"
-                              : "bg-accent/5 hover:bg-accent/10"
-                          }`}
-                        >
+                  const rank = idx + 1;
+                  const badge = getRankBadge(rank);
+                  return <div key={student.studentId} className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${rank <= 3 ? "bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20" : "bg-accent/5 hover:bg-accent/10"}`}>
                           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-accent text-accent-foreground font-bold">
                             {badge.icon}
                           </div>
@@ -328,18 +303,14 @@ const AdminDashboard = () => {
                               Rank #{rank}
                             </Badge>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        </div>;
+                })}
+                  </div>}
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminDashboard;

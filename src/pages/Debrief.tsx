@@ -33,12 +33,86 @@ const Debrief = () => {
 
   const [debriefData, setDebriefData] = useState<DebriefData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const [selectedMCQ, setSelectedMCQ] = useState<Record<number, number>>({});
   const [expandedMissed, setExpandedMissed] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     loadDebriefData();
   }, [runId]);
+
+  const retryScoring = async () => {
+    setRetrying(true);
+    try {
+      if (!runId) throw new Error("No run ID");
+
+      toast({
+        title: "Rescoring assessment...",
+        description: "This may take a moment",
+      });
+
+      // Fetch run data
+      const { data: run, error: runError } = await supabase
+        .from("simulation_runs")
+        .select(`
+          id,
+          transcript,
+          actions,
+          assignment_id,
+          assignments (
+            case_id,
+            cases (
+              clinical_json
+            )
+          )
+        `)
+        .eq("id", runId)
+        .single();
+
+      if (runError) throw runError;
+
+      const clinicalCase = run.assignments?.cases?.clinical_json;
+
+      // Call scoring function
+      const { data: scoreResult, error: scoreError } = await supabase.functions.invoke("score_case", {
+        body: {
+          run_id: runId,
+          transcript: run.transcript || [],
+          actions: run.actions || [],
+          caseData: clinicalCase,
+        },
+      });
+
+      if (scoreError) throw scoreError;
+
+      // Update simulation run with new score
+      const { error: updateError } = await supabase
+        .from("simulation_runs")
+        .update({
+          score_json: scoreResult,
+        })
+        .eq("id", runId);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Rescoring complete",
+        description: "Your assessment has been updated",
+      });
+
+      // Reload debrief data
+      await loadDebriefData();
+    } catch (error: any) {
+      console.error("Error retrying scoring:", error);
+      toast({
+        title: "Rescoring failed",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const loadDebriefData = async () => {
     try {
@@ -369,10 +443,27 @@ const Debrief = () => {
           )}
         </Card>
 
-        {/* Action Button */}
-        <Button className="w-full" onClick={() => navigate("/student")}>
-          Return to Dashboard
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="flex-1" 
+            onClick={retryScoring}
+            disabled={retrying}
+          >
+            {retrying ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Rescoring...
+              </>
+            ) : (
+              "Retry Scoring"
+            )}
+          </Button>
+          <Button className="flex-1" onClick={() => navigate("/student")}>
+            Return to Dashboard
+          </Button>
+        </div>
       </div>
     </div>
   );

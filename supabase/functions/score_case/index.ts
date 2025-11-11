@@ -81,7 +81,29 @@ serve(async (req) => {
     const actionsArray = Array.isArray(actions) ? actions : [];
 
     // Rule-based scoring for structured actions
-    const rubric = caseData.rubric || [];
+    // Provide fallback rubric if none exists
+    const rubric = caseData.rubric || [
+      {
+        section: "History Taking",
+        max: 5,
+        items: [
+          { id: "H1", text: "Obtained chief complaint", weight: 1, tip: "Always start with the patient's main concern" },
+          { id: "H2", text: "Asked about onset and duration", weight: 1, tip: "Timeline is crucial for diagnosis" },
+          { id: "H3", text: "Inquired about aggravating factors", weight: 1, tip: "Understanding triggers helps management" },
+          { id: "H4", text: "Asked about associated symptoms", weight: 1, tip: "Related symptoms provide diagnostic clues" },
+          { id: "H5", text: "Explored patient's concerns", weight: 1, tip: "Patient-centered care improves outcomes" },
+        ],
+      },
+      {
+        section: "Diagnosis & Management",
+        max: 5,
+        items: [
+          { id: "D1", text: "Formulated working diagnosis", weight: 2, tip: "Clear diagnosis guides treatment" },
+          { id: "M1", text: "Proposed appropriate management", weight: 2, tip: "Evidence-based treatment is essential" },
+          { id: "M2", text: "Explained treatment plan to patient", weight: 1, tip: "Patient understanding improves compliance" },
+        ],
+      },
+    ];
     const achievedItems: Record<string, any> = {};
     const missedItems: any[] = [];
     const sections: any[] = [];
@@ -196,10 +218,41 @@ Return ONLY valid JSON in this format:
           const data = await response.json();
           const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
           
-          // Extract JSON from response
-          const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+          // Sanitize and extract JSON from response - try multiple strategies
+          let llmResult = null;
+          
+          // Strategy 1: Find JSON between code blocks
+          let jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
           if (jsonMatch) {
-            const llmResult = JSON.parse(jsonMatch[0]);
+            try {
+              llmResult = JSON.parse(jsonMatch[1]);
+            } catch (e) {
+              console.log('Failed to parse JSON from code block');
+            }
+          }
+          
+          // Strategy 2: Find any JSON object
+          if (!llmResult) {
+            jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              // Clean up common JSON issues
+              let cleanedJson = jsonMatch[0]
+                .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+                .replace(/\\n/g, ' ') // Replace escaped newlines
+                .replace(/\n/g, ' ') // Replace actual newlines
+                .replace(/\r/g, '') // Remove carriage returns
+                .replace(/\t/g, ' ') // Replace tabs
+                .replace(/\s+/g, ' '); // Normalize whitespace
+              
+              try {
+                llmResult = JSON.parse(cleanedJson);
+              } catch (e) {
+                console.log('Failed to parse cleaned JSON:', e);
+              }
+            }
+          }
+          
+          if (llmResult) {
             
             // Apply confidence thresholds
             for (const match of llmResult.matches || []) {
@@ -235,10 +288,15 @@ Return ONLY valid JSON in this format:
                 }
               }
             }
+          } else {
+            console.log('Could not extract valid JSON from LLM response');
           }
+        } else {
+          console.error('LLM API request failed:', response.status, await response.text());
         }
       } catch (e) {
         console.error('LLM scoring error:', e);
+        // Continue with rule-based scoring only
       }
     }
 

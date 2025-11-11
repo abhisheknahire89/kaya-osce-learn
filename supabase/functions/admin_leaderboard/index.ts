@@ -222,12 +222,17 @@ serve(async (req) => {
       query = query.is('cohort_id', null);
     }
 
-    const { data: snapshot, error: snapshotError } = await query.maybeSingle();
+    // There may be multiple snapshots (e.g., from earlier bugs). Take the latest one.
+    const { data: snapshots, error: snapshotError } = await query
+      .order('created_at', { ascending: false })
+      .limit(1);
 
     if (snapshotError) {
       console.error('Error fetching snapshot:', snapshotError);
       throw snapshotError;
     }
+
+    const snapshot = Array.isArray(snapshots) ? snapshots[0] : null;
 
     if (!snapshot) {
       return new Response(

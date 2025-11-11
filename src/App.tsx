@@ -15,6 +15,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import StudentAssigned from "./pages/StudentAssigned";
 import StudentProgress from "./pages/StudentProgress";
 import StudentRemediation from "./pages/StudentRemediation";
+import StudentProfile from "./pages/StudentProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLeaderboard from "./pages/AdminLeaderboard";
 import AdminAnalytics from "./pages/AdminAnalytics";
@@ -110,8 +111,16 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/student/profile" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentProfile />
+                </ProtectedRoute>
+              } 
+            />
             <Route
-              path="/admin" 
+              path="/admin"
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminDashboard />

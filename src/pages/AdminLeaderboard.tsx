@@ -86,28 +86,50 @@ const AdminLeaderboard = () => {
       if (cohortId && cohortId !== 'all') {
         params.append('cohortId', cohortId);
       }
+      
       const {
         data: {
           user
         }
       } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      
+      console.log('Fetching leaderboard with params:', params.toString());
+      
       const {
         data,
         error
       } = await supabase.functions.invoke(`admin_leaderboard?${params.toString()}`, {
         method: 'GET'
       });
-      if (error) throw error;
+      
+      console.log('Leaderboard response:', { data, error });
+      
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.warn('No data returned from edge function');
+        setMetrics([]);
+        setTotalStudents(0);
+        return;
+      }
+      
       setMetrics(data.metrics || []);
       setTotalStudents(data.totalStudents || 0);
+      
+      console.log(`Loaded ${data.metrics?.length || 0} students`);
     } catch (error: any) {
       console.error('Error fetching leaderboard:', error);
       toast({
         title: "Failed to load leaderboard",
-        description: error.message,
+        description: error.message || "Please try generating a snapshot first",
         variant: "destructive"
       });
+      setMetrics([]);
+      setTotalStudents(0);
     } finally {
       setLoading(false);
     }
@@ -281,10 +303,13 @@ const AdminLeaderboard = () => {
                 <p className="text-muted-foreground">Loading leaderboard...</p>
               </div> : metrics.length === 0 ? <div className="text-center py-12">
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-semibold mb-2">No Leaderboard Data Available</p>
                 <p className="text-muted-foreground mb-4">
-                  No data available for this period
+                  No student assessments found for {period === 'daily' ? 'this day' : 'this week'}.
+                  {totalStudents === 0 && ' Make sure students have completed assessments.'}
                 </p>
-                <Button onClick={handleRefresh} variant="outline">
+                <Button onClick={handleRefresh} variant="outline" className="rounded-xl">
+                  <RefreshCw className="h-4 w-4 mr-2" />
                   Generate Snapshot
                 </Button>
               </div> : <>

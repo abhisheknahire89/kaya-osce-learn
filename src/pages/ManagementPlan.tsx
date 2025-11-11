@@ -37,6 +37,7 @@ const ManagementPlan = () => {
 
   const [caseData, setCaseData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDiagnosisText, setSelectedDiagnosisText] = useState<string>("");
   const [managementOptions, setManagementOptions] = useState<{
     immediate: ManagementOption[];
     investigations: ManagementOption[];
@@ -66,6 +67,7 @@ const ManagementPlan = () => {
         .select(`
           id,
           assignment_id,
+          actions,
           assignments (
             case_id,
             cases (
@@ -80,6 +82,18 @@ const ManagementPlan = () => {
 
       const clinical = run.assignments?.cases?.clinical_json as any;
       setCaseData(clinical);
+
+      // Extract selected diagnosis from actions
+      const actions = run.actions as any[] || [];
+      const diagnosisAction = actions.find((action: any) => action.type === 'diagnosis_selected');
+      if (diagnosisAction?.diagnosis_id && clinical?.diagnosisOptions) {
+        const selectedOption = clinical.diagnosisOptions.find(
+          (opt: any) => opt.id === diagnosisAction.diagnosis_id
+        );
+        if (selectedOption) {
+          setSelectedDiagnosisText(selectedOption.text);
+        }
+      }
 
       // Set management options from case data (support both flat and sectioned shapes), with safe fallbacks
       let immediate: ManagementOption[] = [];
@@ -266,10 +280,12 @@ const ManagementPlan = () => {
 
       <div className="p-4 space-y-6">
         {/* Selected Diagnosis Display */}
-        <Card className="p-4 bg-primary/5 border-primary/20">
-          <p className="text-xs text-muted-foreground">Your diagnosis</p>
-          <p className="text-sm font-semibold mt-1">Pittaja Jwara (Pitta predominant fever)</p>
-        </Card>
+        {selectedDiagnosisText && (
+          <Card className="p-4 bg-primary/5 border-primary/20">
+            <p className="text-xs text-muted-foreground">Your diagnosis</p>
+            <p className="text-sm font-semibold mt-1">{selectedDiagnosisText}</p>
+          </Card>
+        )}
 
         {/* Section A: Immediate Actions */}
         <div className="space-y-3">

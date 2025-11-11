@@ -28,6 +28,9 @@ const AdminLeaderboard = () => {
   const [totalStudents, setTotalStudents] = useState(0);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [studentModalOpen, setStudentModalOpen] = useState(false);
+  const [studentRuns, setStudentRuns] = useState<any[]>([]);
+  const [loadingRuns, setLoadingRuns] = useState(false);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   useEffect(() => {
     fetchLeaderboard();
   }, [period, date, cohortId, page]);
@@ -316,9 +319,23 @@ const AdminLeaderboard = () => {
                   {metrics.map((student, idx) => {
                 const rank = page * pageSize + idx + 1;
                 const badge = getRankBadge(rank);
-                return <div key={student.studentId} onClick={() => {
+                return <div key={student.studentId} onClick={async () => {
                   setSelectedStudent(student);
                   setStudentModalOpen(true);
+                  setLoadingRuns(true);
+                  
+                  // Fetch student's simulation runs with detailed scores
+                  const { data: runs } = await supabase
+                    .from('simulation_runs')
+                    .select('id, created_at, end_at, score_json, status')
+                    .eq('student_id', student.studentId)
+                    .eq('status', 'completed')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                  
+                  setStudentRuns(runs || []);
+                  setSelectedRunId(runs?.[0]?.id || null);
+                  setLoadingRuns(false);
                 }} className={`flex items-center gap-4 p-4 rounded-xl transition-all cursor-pointer ${rank <= 3 ? "bg-gradient-to-r from-primary/5 to-accent/5 border-2 border-primary/20 hover:border-primary/40" : "bg-accent/5 hover:bg-accent/10 border border-border"}`}>
                         {/* Rank Badge */}
                         <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 font-bold text-lg ${badge.bg}`}>
@@ -366,7 +383,7 @@ const AdminLeaderboard = () => {
 
       {/* Student Detail Modal */}
       <Dialog open={studentModalOpen} onOpenChange={setStudentModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedStudent?.name}</DialogTitle>
           </DialogHeader>
@@ -394,10 +411,106 @@ const AdminLeaderboard = () => {
               </Card>
             </div>
 
+            {/* Assessment Run Selector */}
+            {loadingRuns ? (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground">Loading assessment details...</p>
+              </div>
+            ) : studentRuns.length > 0 ? (
+              <>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Select Assessment</label>
+                  <Select value={selectedRunId || ''} onValueChange={setSelectedRunId}>
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue placeholder="Select an assessment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {studentRuns.map((run) => (
+                        <SelectItem key={run.id} value={run.id}>
+                          {new Date(run.created_at).toLocaleDateString()} - Score: {run.score_json?.percentage || 0}%
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Rubric Breakdown */}
+                {selectedRunId && (() => {
+                  const selectedRun = studentRuns.find(r => r.id === selectedRunId);
+                  const scoreData = selectedRun?.score_json;
+                  
+                  if (!scoreData?.sections) {
+                    return <p className="text-muted-foreground text-center py-4">No detailed rubric data available</p>;
+                  }
+
+                  return (
+                    <Card className="rounded-2xl">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Rubric Breakdown</CardTitle>
+                        <CardDescription>
+                          Total: {scoreData.totalPoints?.toFixed(1) || 0} / {scoreData.maxPoints || 0} points ({scoreData.percentage || 0}%)
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {scoreData.sections.map((section: any, idx: number) => (
+                          <div key={idx} className="border rounded-xl p-4 space-y-3">
+                            <div className="flex justify-between items-center">
+                              <h4 className="font-semibold text-foreground">{section.section}</h4>
+                              <Badge variant={section.score >= section.max * 0.8 ? "default" : section.score >= section.max * 0.5 ? "secondary" : "destructive"} className="rounded-full">
+                                {section.score.toFixed(1)} / {section.max}
+                              </Badge>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              {section.items.map((item: any, itemIdx: number) => (
+                                <div key={itemIdx} className={`flex items-start gap-3 p-3 rounded-lg ${
+                                  item.achieved === 1 ? 'bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900' :
+                                  item.achieved === 0.5 ? 'bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900' :
+                                  'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900'
+                                }`}>
+                                  <div className="mt-0.5">
+                                    {item.achieved === 1 ? (
+                                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                                        <span className="text-white text-xs">✓</span>
+                                      </div>
+                                    ) : item.achieved === 0.5 ? (
+                                      <div className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center">
+                                        <span className="text-white text-xs">~</span>
+                                      </div>
+                                    ) : (
+                                      <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                                        <span className="text-white text-xs">✗</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm text-foreground">{item.text}</p>
+                                    {item.evidence && (
+                                      <p className="text-xs text-muted-foreground mt-1 italic">
+                                        Evidence: {item.evidence}
+                                      </p>
+                                    )}
+                                    {item.tip && !item.achieved && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        💡 {item.tip}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+              </>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">No completed assessments found</p>
+            )}
+
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 rounded-xl">
-                View All Runs
-              </Button>
               <Button variant="outline" className="flex-1 rounded-xl" onClick={() => handleExport('csv')}>
                 Export Report
               </Button>

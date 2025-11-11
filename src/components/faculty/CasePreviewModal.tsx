@@ -44,6 +44,15 @@ export const CasePreviewModal = ({
   const handleApprove = async () => {
     if (!caseData || !userId) return;
 
+    if (!deadline) {
+      toast({
+        title: "Deadline required",
+        description: "Please set a deadline before approving",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLocalIsApproving(true);
 
     try {
@@ -615,7 +624,7 @@ export const CasePreviewModal = ({
               
               <Button 
                 onClick={handleApprove} 
-                disabled={!hasReviewed || localIsApproving || !deadline} 
+                disabled={!hasReviewed || localIsApproving} 
                 className="flex-1 rounded-xl bg-gradient-to-r from-primary to-[#7AA86E] text-white"
               >
                 {localIsApproving ? "Approving..." : (

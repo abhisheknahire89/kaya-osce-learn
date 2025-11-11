@@ -64,9 +64,9 @@ serve(async (req) => {
   }
 
   try {
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     const { run_id, transcript, actions, caseData } = await req.json();
@@ -225,60 +225,40 @@ Return ONLY valid JSON in this exact format:
 }`;
 
       try {
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+        const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
           headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
             'Content-Type': 'application/json',
-            'x-goog-api-key': GEMINI_API_KEY,
           },
           body: JSON.stringify({
-            contents: [{
-              role: 'user',
-              parts: [{ text: scoringPrompt }]
-            }],
-            generationConfig: {
-              temperature: 0.2,
-              maxOutputTokens: 2048,
-            },
+            model: 'google/gemini-2.5-pro',
+            messages: [
+              {
+                role: 'user',
+                content: scoringPrompt
+              }
+            ],
+            temperature: 0.2,
+            max_tokens: 2048,
+            response_format: { type: 'json_object' }
           }),
         });
 
         if (response.ok) {
           const data = await response.json();
-          const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const responseText = data.choices?.[0]?.message?.content || '';
           
-          // Sanitize and extract JSON from response - try multiple strategies
+          console.log('LLM Response received, length:', responseText.length);
+          
+          // Parse JSON response
           let llmResult = null;
-          
-          // Strategy 1: Find JSON between code blocks
-          let jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-          if (jsonMatch) {
-            try {
-              llmResult = JSON.parse(jsonMatch[1]);
-            } catch (e) {
-              console.log('Failed to parse JSON from code block');
-            }
-          }
-          
-          // Strategy 2: Find any JSON object
-          if (!llmResult) {
-            jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              // Clean up common JSON issues
-              let cleanedJson = jsonMatch[0]
-                .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-                .replace(/\\n/g, ' ') // Replace escaped newlines
-                .replace(/\n/g, ' ') // Replace actual newlines
-                .replace(/\r/g, '') // Remove carriage returns
-                .replace(/\t/g, ' ') // Replace tabs
-                .replace(/\s+/g, ' '); // Normalize whitespace
-              
-              try {
-                llmResult = JSON.parse(cleanedJson);
-              } catch (e) {
-                console.log('Failed to parse cleaned JSON:', e);
-              }
-            }
+          try {
+            llmResult = JSON.parse(responseText);
+            console.log('Successfully parsed JSON with', llmResult.matches?.length || 0, 'matches');
+          } catch (e) {
+            console.error('Failed to parse JSON response:', e);
+            console.log('Response text:', responseText.substring(0, 500));
           }
           
           if (llmResult) {

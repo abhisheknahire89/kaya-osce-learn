@@ -36,6 +36,7 @@ const Debrief = () => {
   const [retrying, setRetrying] = useState(false);
   const [selectedMCQ, setSelectedMCQ] = useState<Record<number, number>>({});
   const [expandedMissed, setExpandedMissed] = useState<Record<number, boolean>>({});
+  const [expandedRubric, setExpandedRubric] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     loadDebriefData();
@@ -258,6 +259,18 @@ const Debrief = () => {
     });
   };
 
+  const toggleRubricSection = (index: number) => {
+    setExpandedRubric({
+      ...expandedRubric,
+      [index]: !expandedRubric[index],
+    });
+  };
+
+  const extractCitation = (text: string): string | null => {
+    const match = text.match(/\[file-([^\]]+)\]/);
+    return match ? match[1].replace(/-/g, ' ') : null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -298,34 +311,60 @@ const Debrief = () => {
           ) : (
             <div className="space-y-3">
               {debriefData.rubric.map((section, idx) => (
-                <div key={idx} className="border-l-2 border-primary/30 pl-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold">{section.section}</p>
-                    <Badge variant="outline" className="text-xs">
-                      {section.score}/{section.max}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Missed:{" "}
-                    {section.items.filter((item: any) => !item.achieved).length === 0
-                      ? "All items completed"
-                      : `${section.items.filter((item: any) => !item.achieved).length} item(s)`}
-                  </p>
-                  {section.items.filter((item: any) => !item.achieved).length > 0 && (
-                    <div className="space-y-1">
-                      {section.items
-                        .filter((item: any) => !item.achieved)
-                        .map((item: any, itemIdx: number) => (
-                          <div key={itemIdx} className="flex items-start gap-2">
-                            <X className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
-                            <p className="text-xs">
-                              {item.id} — {item.text}
-                            </p>
-                          </div>
-                        ))}
+                <Card
+                  key={idx}
+                  className="cursor-pointer hover:bg-accent/50 transition-colors"
+                  onClick={() => toggleRubricSection(idx)}
+                >
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-semibold">{section.section}</p>
+                      <Badge variant="outline" className="text-xs">
+                        {section.score}/{section.max}
+                      </Badge>
                     </div>
-                  )}
-                </div>
+                    <p className="text-xs text-muted-foreground">
+                      {section.items.filter((item: any) => item.achieved).length} of {section.items.length} items completed • 
+                      Tap to {expandedRubric[idx] ? "collapse" : "expand"}
+                    </p>
+                    
+                    {expandedRubric[idx] && (
+                      <div className="mt-3 space-y-2 border-t pt-2">
+                        {section.items.map((item: any, itemIdx: number) => {
+                          const citation = extractCitation(item.text);
+                          const cleanText = item.text.replace(/\s*\[file-[^\]]+\]\s*$/, '');
+                          
+                          return (
+                            <div
+                              key={itemIdx}
+                              className={`flex items-start gap-2 p-2 rounded ${
+                                item.achieved
+                                  ? "bg-green-50 dark:bg-green-950/20"
+                                  : "bg-red-50 dark:bg-red-950/20"
+                              }`}
+                            >
+                              {item.achieved ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                              ) : (
+                                <X className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                              )}
+                              <div className="flex-1">
+                                <p className="text-xs">
+                                  <span className="font-medium">{item.id}</span> — {cleanText}
+                                </p>
+                                {citation && (
+                                  <p className="text-xs text-primary mt-1">
+                                    📖 Reference: {citation}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </Card>
               ))}
             </div>
           )}

@@ -143,6 +143,7 @@ serve(async (req) => {
         const studentId = run.student_id;
         const scoreData = run.score_json as any;
         const percent = scoreData?.percentage || 0;
+        const normalizedScore = percent / 10; // Convert to 0-10 scale
         const profile = profileMap.get(studentId);
         const profileMetadata = profile?.metadata as any;
         const studentCohortId = profileMetadata?.cohort_id;
@@ -162,7 +163,7 @@ serve(async (req) => {
           };
         }
 
-        studentMetrics[studentId].scores.push(percent);
+        studentMetrics[studentId].scores.push(normalizedScore);
         studentMetrics[studentId].attempts += 1;
         
         if (new Date(run.end_at) > new Date(studentMetrics[studentId].lastAttemptAt)) {

@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const GEMINI_VP_API_KEY = Deno.env.get('GEMINI_VP_API_KEY');
-    if (!GEMINI_VP_API_KEY) {
-      throw new Error('GEMINI_VP_API_KEY is not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     const { run_id, message, conversationHistory, caseData } = await req.json();
@@ -60,46 +60,53 @@ Example good responses:
 "I'm worried this fever won't go away."
 "My digestion feels weak and I get burning after meals."`;
 
-    // Build conversation messages
+    // Build conversation messages for Lovable AI
     const messages = [
       {
-        role: 'user',
-        parts: [{ text: systemMessage }]
+        role: 'system',
+        content: systemMessage
       },
       ...(conversationHistory || []).map((msg: any) => ({
-        role: msg.role === 'student' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
+        role: msg.role === 'student' ? 'user' : 'assistant',
+        content: msg.content
       })),
       {
         role: 'user',
-        parts: [{ text: message }]
+        content: message
       }
     ];
 
-    // Call Gemini Flash for fast VP chat
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+    // Call Lovable AI Gateway with Gemini Flash
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_VP_API_KEY,
       },
       body: JSON.stringify({
-        contents: messages,
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 200,
-        },
+        model: 'google/gemini-2.5-flash',
+        messages: messages,
+        temperature: 0.8,
+        max_tokens: 200,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Gemini API error:', response.status, errorText);
-      throw new Error(`Gemini API error: ${response.status}`);
+      console.error('Lovable AI error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again in a moment.');
+      }
+      if (response.status === 402) {
+        throw new Error('AI credits depleted. Please contact support.');
+      }
+      
+      throw new Error(`AI Gateway error: ${response.status}`);
     }
 
     const data = await response.json();
-    const vpResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const vpResponse = data.choices?.[0]?.message?.content;
     
     if (!vpResponse) {
       throw new Error('No response from Gemini');

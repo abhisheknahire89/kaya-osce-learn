@@ -107,7 +107,6 @@ serve(async (req) => {
     const achievedItems: Record<string, any> = {};
     const missedItems: any[] = [];
     const sections: any[] = [];
-    let ruleBasedScore = 0;
     let maxScore = 0;
     
     // Build transcript text for LLM analysis
@@ -115,7 +114,7 @@ serve(async (req) => {
       `${String(msg.role || 'unknown')}: ${String(msg.content || '')}`
     ).join('\n');
 
-    // Score each section
+    // Score each section - defer to LLM for accurate assessment
     for (const section of rubric) {
       const sectionResult = {
         section: section.section,
@@ -127,70 +126,68 @@ serve(async (req) => {
 
       for (const item of section.items) {
         const itemWeight = item.weight || 1;
-        let achieved = false;
-        let confidence = 0;
-        let evidence = null;
         
-        // Rule-based check for actions
-        const actionMatch = actionsArray.find((action: any) => {
-          const actionType = String(action.type || action.action || '').toLowerCase();
-          const itemId = String(item.id || '').toLowerCase();
-          const itemText = String(item.text || '').toLowerCase();
-          return actionType.includes(itemId) || itemText.includes(actionType);
-        });
-
-        if (actionMatch) {
-          achieved = true;
-          confidence = 100;
-          evidence = `Action performed: ${JSON.stringify(actionMatch)}`;
-          ruleBasedScore += itemWeight;
-          sectionResult.score += itemWeight;
-        }
-
+        // Initialize all items as not achieved - LLM will evaluate
         sectionResult.items.push({
           id: item.id,
           text: item.text,
-          achieved: achieved ? 1 : 0,
-          evidence: evidence,
+          achieved: 0,
+          evidence: null,
           tip: item.tip || null,
           reference: item.reference || null,
         });
 
-        if (achieved) {
-          achievedItems[item.id] = { achieved: true, confidence, method: 'rule-based' };
-        } else {
-          // Add to missed items for LLM analysis
-          missedItems.push(item);
-        }
+        // Add all items for LLM analysis
+        missedItems.push(item);
       }
 
       sections.push(sectionResult);
     }
 
-    // LLM-assisted scoring for missed items (transcript analysis)
+    // LLM-based scoring for all items with strict evaluation
     let llmScore = 0;
     const llmMatches: any[] = [];
     
     if (missedItems.length > 0 && transcriptText.length > 10) {
-      const scoringPrompt = `You are scoring a medical student's Virtual OSCE performance.
+      // Build comprehensive context for scoring
+      const actionsText = actionsArray.map((a: any) => 
+        `${a.type || a.action}: ${JSON.stringify(a)}`
+      ).join('\n');
 
-RUBRIC ITEMS TO EVALUATE:
-${JSON.stringify(missedItems.map(i => ({ id: i.id, text: i.text, weight: i.weight || 1 })), null, 2)}
+      const scoringPrompt = `You are a strict OSCE examiner scoring a medical student's virtual patient encounter. Be rigorous and only award points when the student clearly demonstrates the required skill.
+
+EVALUATION CRITERIA:
+${JSON.stringify(missedItems.map(i => ({ 
+  id: i.id, 
+  criteria: i.text, 
+  weight: i.weight || 1,
+  section: sections.find(s => s.items.some((si: any) => si.id === i.id))?.section
+})), null, 2)}
 
 STUDENT-PATIENT CONVERSATION:
 ${transcriptText}
 
-For each rubric item, analyze if the student demonstrated the skill in the conversation.
-Return confidence score (0-100) and brief evidence from transcript.
+ACTIONS PERFORMED:
+${actionsText || "No documented actions"}
 
-Return ONLY valid JSON in this format:
+STRICT SCORING RULES:
+- Confidence 80-100: Student clearly and explicitly demonstrated the skill
+- Confidence 50-79: Student partially demonstrated or implied the skill
+- Confidence 0-49: Student did not demonstrate the skill adequately
+- Be critical: Don't give credit for vague or incomplete attempts
+- History items require specific questions being asked
+- Exam/investigation items require explicit ordering or performing
+- Diagnosis items require clear formulation stated
+- Management items require specific treatment plans
+
+Analyze each criterion and return ONLY valid JSON:
 {
   "matches": [
     {
       "itemId": "H1",
       "demonstrated": true,
       "confidence": 85,
-      "evidence": "Student asked 'where is the pain' at timestamp"
+      "evidence": "Student explicitly asked 'what brings you in today' establishing chief complaint"
     }
   ]
 }`;
@@ -265,9 +262,9 @@ Return ONLY valid JSON in this format:
                 confidence: match.confidence,
               });
 
-              // Update section scores based on confidence
-              if (match.confidence >= 80) {
-                // Auto-accept
+              // Update section scores based on strict confidence thresholds
+              if (match.confidence >= 75) {
+                // Full credit - clearly demonstrated
                 llmScore += itemWeight;
                 const section = sections.find(s => s.items.some((i: any) => i.id === match.itemId));
                 if (section) {
@@ -278,15 +275,21 @@ Return ONLY valid JSON in this format:
                     sectionItem.evidence = match.evidence;
                   }
                 }
-              } else if (match.confidence >= 50) {
-                // Partial credit
+              } else if (match.confidence >= 60) {
+                // Partial credit - partially demonstrated
                 const partialPoints = itemWeight * 0.5;
                 llmScore += partialPoints;
                 const section = sections.find(s => s.items.some((i: any) => i.id === match.itemId));
                 if (section) {
                   section.score += partialPoints;
+                  const sectionItem = section.items.find((i: any) => i.id === match.itemId);
+                  if (sectionItem) {
+                    sectionItem.achieved = 0.5;
+                    sectionItem.evidence = `Partial: ${match.evidence}`;
+                  }
                 }
               }
+              // Below 60 confidence = no credit
             }
           } else {
             console.log('Could not extract valid JSON from LLM response');
@@ -301,7 +304,7 @@ Return ONLY valid JSON in this format:
     }
 
     // Calculate final scores
-    const totalPoints = ruleBasedScore + llmScore;
+    const totalPoints = llmScore;
     const percentage = maxScore > 0 ? Math.round((totalPoints / maxScore) * 100) : 0;
     const passed = percentage >= 60;
 

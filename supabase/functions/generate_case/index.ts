@@ -119,6 +119,21 @@ CRITICAL: Output ONLY the raw JSON object. Do NOT wrap it in markdown code block
 
 Use English for clinical text. Add Devanagari headings where specified. 
 
+IMPORTANT RUBRIC STRUCTURE:
+Every case MUST include a "Clinical Resource Stewardship" section in the rubric with this exact structure:
+{
+  "section": "Clinical Resource Stewardship",
+  "max": 2,
+  "items": [
+    { 
+      "id": "RS1", 
+      "text": "Ordered only relevant investigations (avoided unnecessary tests)", 
+      "weight": 2,
+      "tip": "Good clinicians order targeted investigations, not shotgun testing"
+    }
+  ]
+}
+
 IMPORTANT CITATION RULES:
 1. For RUBRIC items (case reasoning, clinical assessment): Include evidence-based citations from the reference PDF at /public/references/References_Books_Resources.pdf. Use format: [file-REFERENCE-NAME] where REFERENCE-NAME matches a book from the PDF (e.g., [file-CHARAKA-SAMHITA], [file-BHAVAPRAKASHA], [file-KAYACHIKITSA-TEXTBOOK]).
 2. For MCQ rationales: Do NOT include citations. Keep them concise and educational without references.
@@ -258,6 +273,19 @@ Required JSON structure:
       "max": number,
       "items": [
         { "id": "item-id", "text": "criteria", "weight": number }
+      ]
+    },
+    {
+      "section": "Clinical Resource Stewardship",
+      "max": 2,
+      "items": [
+        { 
+          "id": "RS1", 
+          "text": "Ordered only relevant investigations (avoided unnecessary tests)", 
+          "weight": 2,
+          "tip": "Good clinicians order targeted investigations, not shotgun testing",
+          "reference": "Clinical reasoning and resource stewardship principles"
+        }
       ]
     }
   ],

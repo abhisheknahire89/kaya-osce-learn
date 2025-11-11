@@ -103,6 +103,13 @@ serve(async (req) => {
           { id: "M2", text: "Explained treatment plan to patient", weight: 1, tip: "Patient understanding improves compliance" },
         ],
       },
+      {
+        section: "Clinical Resource Stewardship",
+        max: 2,
+        items: [
+          { id: "RS1", text: "Ordered only relevant investigations (avoided unnecessary tests)", weight: 2, tip: "Good clinicians order targeted investigations, not shotgun testing" },
+        ],
+      },
     ];
     const achievedItems: Record<string, any> = {};
     const missedItems: any[] = [];
@@ -163,6 +170,15 @@ OSCE EVALUATION PRINCIPLES:
 - Focus on COMPETENCY DEMONSTRATION (skill shown, not inferred)
 - Award points based on EXPLICIT EVIDENCE in transcript/actions
 
+**SPECIAL EVALUATION - Clinical Resource Stewardship (RS1):**
+For criterion RS1 "Ordered only relevant investigations":
+- Review all lab tests ordered by the student (look for "lab_ordered" actions)
+- Identify which tests are RELEVANT (support the diagnosis) vs UNRELATED (normal/distractor tests)
+- Full credit (confidence 90-100): Student ordered ONLY relevant tests, avoided unnecessary tests
+- Partial credit (confidence 60-75): Student ordered mostly relevant tests but included 1 unnecessary test
+- No credit (confidence 0-59): Student ordered multiple unnecessary tests (shotgun approach)
+- This evaluates clinical reasoning and appropriate resource utilization
+
 RUBRIC CRITERIA TO EVALUATE:
 ${JSON.stringify(missedItems.map(i => ({ 
   id: i.id, 
@@ -194,6 +210,7 @@ EVALUATION INSTRUCTIONS:
 6. Investigations: Requires clear ordering/requesting
 7. Diagnosis: Requires explicit statement of working diagnosis
 8. Management: Requires specific treatment plan articulated
+9. **Resource Stewardship (RS1)**: Count lab tests ordered, identify relevant vs unrelated based on case diagnosis, score based on appropriateness
 
 Return ONLY valid JSON in this exact format:
 {

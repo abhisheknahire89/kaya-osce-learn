@@ -95,16 +95,22 @@ const ManagementPlan = () => {
         definitive = (mgmt.definitive as ManagementOption[]) || [];
       }
 
-      if (!immediate.length && !investigations.length && !definitive.length) {
+      if (!immediate.length) {
         immediate = [
           { id: "A1", text: "Start initial stabilization measures", section: "immediate", hint: "First-line intervention" },
           { id: "A2", text: "Start supportive care", section: "immediate", hint: "Symptomatic relief" },
           { id: "A3", text: "Monitor vital signs", section: "immediate", hint: "Ongoing assessment" },
         ];
+      }
+      
+      if (!investigations.length) {
         investigations = [
           { id: "B1", text: "Order relevant investigations", section: "investigations" },
           { id: "B2", text: "Perform targeted examination", section: "investigations" },
         ];
+      }
+      
+      if (!definitive.length) {
         definitive = [
           { id: "C1", text: "Outpatient care with follow-up", section: "definitive" },
           { id: "C2", text: "Admit for observation and treatment", section: "definitive" },

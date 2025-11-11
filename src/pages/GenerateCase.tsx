@@ -120,22 +120,11 @@ const GenerateCase = () => {
       }
 
       if (data.error) {
-        // Handle specific error types
-        if (data.error === 'AI_KEY_NOT_CONFIGURED') {
-          toast({
-            title: "Veda AI Not Configured",
-            description: data.message || "Please contact support for assistance.",
-            variant: "destructive",
-          });
-        } else if (data.error === 'AI_GENERATION_ERROR') {
-          toast({
-            title: "Generation Error",
-            description: data.message || "Veda AI encountered an error. Please try again.",
-            variant: "destructive",
-          });
-        } else {
-          throw new Error(data.error);
-        }
+        toast({
+          title: "Veda AI Server Down",
+          description: "Please try again later or contact support.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -153,8 +142,8 @@ const GenerateCase = () => {
     } catch (error: any) {
       console.error("Error generating case:", error);
       toast({
-        title: "Generation failed",
-        description: error.message || "Failed to generate case. Please try again.",
+        title: "Veda AI Server Down",
+        description: "Please try again later or contact support.",
         variant: "destructive",
       });
     } finally {

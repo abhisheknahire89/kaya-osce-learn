@@ -30,9 +30,7 @@ const Index = () => {
           <p className="mb-2 text-sm text-secondary font-medium" lang="hi">
             आयुर्वेदिक शिक्षा के लिए एआई-संचालित आभासी परीक्षा
           </p>
-          <p className="mb-8 text-xl text-muted-foreground">
-            NCISM CBDC-aligned virtual patient assessments for BAMS students with Gemini-powered case generation
-          </p>
+          
           <div className="flex justify-center gap-4">
             <Button size="lg" asChild className="rounded-2xl bg-gradient-to-r from-primary to-[#7AA86E] text-white">
               <Link to="/auth">Get Started</Link>

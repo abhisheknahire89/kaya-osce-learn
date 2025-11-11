@@ -36,7 +36,7 @@ const AdminAnalytics = () => {
       const { data: runs, error: runsError } = await supabase
         .from("simulation_runs")
         .select("id, student_id, score_json, created_at, status, assignment_id")
-        .eq("status", "scored")
+        .eq("status", "completed")
         .gte("created_at", startDate.toISOString());
 
       if (runsError) throw runsError;

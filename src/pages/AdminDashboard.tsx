@@ -45,7 +45,7 @@ const AdminDashboard = () => {
       const {
         data: allRuns,
         error: runsError
-      } = await supabase.from("simulation_runs").select("id, student_id, score_json, created_at, status, end_at").eq("status", "scored");
+      } = await supabase.from("simulation_runs").select("id, student_id, score_json, created_at, status, end_at").eq("status", "completed");
       if (runsError) throw runsError;
 
       // Create a map of student profiles

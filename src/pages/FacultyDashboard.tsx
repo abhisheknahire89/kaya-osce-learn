@@ -73,7 +73,7 @@ const FacultyDashboard = () => {
         .from("simulation_runs")
         .select("id, status");
 
-      const completedRuns = runs?.filter(r => r.status === "scored").length || 0;
+      const completedRuns = runs?.filter(r => r.status === "completed").length || 0;
       const totalRuns = runs?.length || 0;
       const avgCompletion = totalRuns > 0 ? Math.round((completedRuns / totalRuns) * 100) : 0;
 

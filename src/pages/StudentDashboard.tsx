@@ -56,7 +56,7 @@ const StudentDashboard = () => {
         .from("simulation_runs")
         .select("*")
         .eq("student_id", user!.id)
-        .eq("status", "scored")
+        .eq("status", "completed")
         .order("created_at", { ascending: false });
 
       if (runsError) throw runsError;

@@ -112,7 +112,7 @@ serve(async (req) => {
             )
           )
         `)
-        .eq('status', 'scored')
+        .eq('status', 'completed')
         .gte('end_at', `${startDate}T00:00:00`)
         .lte('end_at', `${endDate}T23:59:59`);
 

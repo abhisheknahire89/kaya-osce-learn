@@ -94,36 +94,47 @@ serve(async (req) => {
         endDate = date;
       }
 
-      // Query runs filtered by subject
-      let query = supabase
+      // Fetch simulation runs and assignments separately
+      const { data: runs, error: runsError } = await supabase
         .from('simulation_runs')
-        .select(`
-          student_id,
-          score_json,
-          end_at,
-          profiles!simulation_runs_student_id_fkey (
-            id,
-            name,
-            metadata
-          ),
-          assignments (
-            cases (
-              subject
-            )
-          )
-        `)
+        .select('student_id, score_json, end_at, assignment_id')
         .eq('status', 'completed')
         .gte('end_at', `${startDate}T00:00:00`)
         .lte('end_at', `${endDate}T23:59:59`);
 
-      const { data: runs, error: runsError } = await query;
-
       if (runsError) throw runsError;
+
+      // Fetch profiles separately
+      const studentIds = [...new Set(runs?.map(r => r.student_id) || [])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, metadata')
+        .in('id', studentIds);
+
+      // Fetch assignments and cases
+      const assignmentIds = [...new Set(runs?.map(r => r.assignment_id).filter(Boolean) || [])];
+      const { data: assignments } = await supabase
+        .from('assignments')
+        .select('id, case_id')
+        .in('id', assignmentIds);
+
+      const caseIds = [...new Set(assignments?.map(a => a.case_id).filter(Boolean) || [])];
+      const { data: cases } = await supabase
+        .from('cases')
+        .select('id, subject')
+        .in('id', caseIds);
+
+      // Create maps
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const assignmentMap = new Map(assignments?.map(a => [a.id, a]) || []);
+      const caseMap = new Map(cases?.map(c => [c.id, c]) || []);
 
       // Filter by subject and compute metrics
       const filteredRuns = runs?.filter(run => {
-        const assignments = run.assignments as any;
-        return assignments?.cases?.subject === subject;
+        const assignment = assignmentMap.get(run.assignment_id);
+        if (!assignment) return false;
+        const caseData = caseMap.get(assignment.case_id);
+        return caseData?.subject === subject;
       }) || [];
 
       const studentMetrics: Record<string, any> = {};
@@ -132,8 +143,8 @@ serve(async (req) => {
         const studentId = run.student_id;
         const scoreData = run.score_json as any;
         const percent = scoreData?.percent || 0;
-        const profiles = run.profiles as any;
-        const profileMetadata = profiles?.metadata as any;
+        const profile = profileMap.get(studentId);
+        const profileMetadata = profile?.metadata as any;
         const studentCohortId = profileMetadata?.cohort_id;
 
         if (cohortId && studentCohortId !== cohortId) {
@@ -143,7 +154,7 @@ serve(async (req) => {
         if (!studentMetrics[studentId]) {
           studentMetrics[studentId] = {
             studentId: studentId,
-            name: profiles?.name || 'Unknown',
+            name: profile?.name || 'Unknown',
             cohortId: studentCohortId,
             scores: [],
             attempts: 0,

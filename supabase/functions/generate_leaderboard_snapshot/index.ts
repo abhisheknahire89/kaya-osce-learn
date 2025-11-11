@@ -57,32 +57,34 @@ serve(async (req) => {
       console.log(`Processing cohort: ${cohort.name} (${cohort.id})`);
 
       // Build query for simulation runs
-      let query = supabase
+      // Fetch simulation runs without join
+      const { data: runs, error: runsError } = await supabase
         .from('simulation_runs')
-        .select(`
-          student_id,
-          score_json,
-          end_at,
-          profiles!simulation_runs_student_id_fkey (
-            id,
-            name,
-            metadata
-          )
-        `)
+        .select('student_id, score_json, end_at')
         .eq('status', 'completed')
         .gte('end_at', `${startDate}T00:00:00`)
         .lte('end_at', `${endDate}T23:59:59`)
         .not('score_json', 'is', null);
 
-      // Note: cohort filtering would require joining through profiles metadata or a separate cohort_members table
-      // For now, we'll filter in-memory based on profile metadata
-
-      const { data: runs, error: runsError } = await query;
-
       if (runsError) {
         console.error('Error fetching runs:', runsError);
         throw runsError;
       }
+
+      // Fetch profiles separately
+      const studentIds = [...new Set(runs?.map(r => r.student_id) || [])];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, metadata')
+        .in('id', studentIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      // Create profile map
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
       console.log(`Found ${runs?.length || 0} runs for cohort ${cohort.name}`);
 
@@ -94,9 +96,9 @@ serve(async (req) => {
         const scoreData = run.score_json as any;
         const percent = scoreData?.percent || 0;
         
-        // Filter by cohort if specified
-        const profiles = run.profiles as any;
-        const profileMetadata = profiles?.metadata as any;
+        // Get profile from map
+        const profile = profileMap.get(studentId);
+        const profileMetadata = profile?.metadata as any;
         const studentCohortId = profileMetadata?.cohort_id;
         
         if (cohort.id && studentCohortId !== cohort.id) {
@@ -106,7 +108,7 @@ serve(async (req) => {
         if (!studentMetrics[studentId]) {
           studentMetrics[studentId] = {
             studentId: studentId,
-            name: profiles?.name || 'Unknown',
+            name: profile?.name || 'Unknown',
             cohortId: studentCohortId,
             scores: [],
             attempts: 0,

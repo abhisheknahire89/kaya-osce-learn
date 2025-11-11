@@ -21,7 +21,7 @@ const facultyNavItems = [
 
 const adminNavItems = [
   { key: "home", label: "Dashboard", icon: Home, route: "/admin" },
-  { key: "cases", label: "Cases", icon: Clipboard, route: "/faculty" },
+  { key: "leaderboard", label: "Leaderboard", icon: Users, route: "/admin/leaderboard" },
   { key: "analytics", label: "Analytics", icon: BarChart3, route: "/admin/analytics" },
   { key: "profile", label: "Profile", icon: User, route: "/admin/profile" },
 ];

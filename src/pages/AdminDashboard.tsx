@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, TrendingUp, Users, Award, Loader2, AlertCircle, Sparkles } from "lucide-react";
+import { Trophy, TrendingUp, Users, Award, Loader2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -164,17 +164,12 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
             <p className="text-muted-foreground mt-1">Student performance overview & leaderboards</p>
           </div>
-          <div className="flex gap-2">
-            <Button asChild variant="outline" className="rounded-xl">
-              
-            </Button>
-            <Button asChild className="rounded-xl bg-gradient-to-r from-primary to-[#7AA86E]">
-              <Link to="/admin/leaderboard">
-                <Trophy className="mr-2 h-4 w-4" />
-                View Full Leaderboard
-              </Link>
-            </Button>
-          </div>
+          <Button asChild className="rounded-xl bg-gradient-to-r from-primary to-[#7AA86E]">
+            <Link to="/admin/leaderboard">
+              <Trophy className="mr-2 h-4 w-4" />
+              View Full Leaderboard
+            </Link>
+          </Button>
         </div>
 
         {/* Stats Overview */}

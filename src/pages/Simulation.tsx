@@ -159,13 +159,21 @@ const Simulation = () => {
         setRunId(existingRun.id);
         
         // Restore messages from transcript
-        if (existingRun.transcript && Array.isArray(existingRun.transcript)) {
+        if (existingRun.transcript && Array.isArray(existingRun.transcript) && existingRun.transcript.length > 0) {
           const restoredMessages = existingRun.transcript.map((msg: any) => ({
             role: msg.role,
             content: msg.content,
             timestamp: new Date(msg.timestamp || Date.now()),
           }));
           setMessages(restoredMessages);
+        } else {
+          // If no transcript, set initial message
+          const initialMessage = {
+            role: "patient" as const,
+            content: `Namaste Doctor. I'm ${clinical?.patient?.name || "the patient"}. I've been having some problems.`,
+            timestamp: new Date(),
+          };
+          setMessages([initialMessage]);
         }
 
         // Restore exam findings and lab tests from actions

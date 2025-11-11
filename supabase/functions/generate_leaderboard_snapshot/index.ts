@@ -94,7 +94,7 @@ serve(async (req) => {
       runs?.forEach(run => {
         const studentId = run.student_id;
         const scoreData = run.score_json as any;
-        const percent = scoreData?.percent || 0;
+        const percent = scoreData?.percentage || 0;
         
         // Get profile from map
         const profile = profileMap.get(studentId);

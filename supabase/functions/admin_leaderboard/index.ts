@@ -81,10 +81,14 @@ serve(async (req) => {
     // If subject filter is present, compute on-the-fly
     if (subject) {
       // Calculate date range
-      let startDate: string;
-      let endDate: string;
+      let startDate: string | null = null;
+      let endDate: string | null = null;
 
-      if (period === 'daily') {
+      if (period === 'all') {
+        // No date filtering for all-time
+        startDate = null;
+        endDate = null;
+      } else if (period === 'daily') {
         startDate = date;
         endDate = date;
       } else {
@@ -95,12 +99,19 @@ serve(async (req) => {
       }
 
       // Fetch simulation runs and assignments separately
-      const { data: runs, error: runsError } = await supabase
+      let runsQuery = supabase
         .from('simulation_runs')
         .select('student_id, score_json, end_at, assignment_id')
-        .eq('status', 'completed')
-        .gte('end_at', `${startDate}T00:00:00`)
-        .lte('end_at', `${endDate}T23:59:59`);
+        .eq('status', 'completed');
+
+      // Only add date filters if not all-time
+      if (startDate && endDate) {
+        runsQuery = runsQuery
+          .gte('end_at', `${startDate}T00:00:00`)
+          .lte('end_at', `${endDate}T23:59:59`);
+      }
+
+      const { data: runs, error: runsError } = await runsQuery;
 
       if (runsError) throw runsError;
 
@@ -199,6 +210,83 @@ serve(async (req) => {
           period: period,
           cohortId: cohortId || null,
           subject: subject,
+          totalStudents: totalStudents,
+          page: page,
+          pageSize: pageSize,
+          metrics: paginatedMetrics,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // For "all" period, compute on-the-fly (no snapshots)
+    if (period === 'all') {
+      // Fetch all completed runs
+      const { data: runs, error: runsError } = await supabase
+        .from('simulation_runs')
+        .select('student_id, score_json, end_at')
+        .eq('status', 'completed');
+
+      if (runsError) throw runsError;
+
+      // Fetch profiles
+      const studentIds = [...new Set(runs?.map(r => r.student_id) || [])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', studentIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      // Compute metrics per student
+      const studentMetrics = new Map<string, { scores: number[]; lastAttemptAt: string }>();
+
+      runs?.forEach(run => {
+        if (!run.score_json?.totalPoints || !run.score_json?.maxPoints) return;
+        
+        const normalizedScore = (run.score_json.totalPoints / run.score_json.maxPoints) * 10;
+        
+        if (!studentMetrics.has(run.student_id)) {
+          studentMetrics.set(run.student_id, { scores: [], lastAttemptAt: run.end_at });
+        }
+        
+        const metrics = studentMetrics.get(run.student_id)!;
+        metrics.scores.push(normalizedScore);
+        if (new Date(run.end_at) > new Date(metrics.lastAttemptAt)) {
+          metrics.lastAttemptAt = run.end_at;
+        }
+      });
+
+      // Build final metrics array
+      const metrics = Array.from(studentMetrics.entries()).map(([studentId, data]) => {
+        const profile = profileMap.get(studentId);
+        return {
+          studentId,
+          name: profile?.name || 'Unknown',
+          avgScore: data.scores.reduce((a, b) => a + b, 0) / data.scores.length,
+          attempts: data.scores.length,
+          lastAttemptAt: data.lastAttemptAt,
+        };
+      });
+
+      // Sort
+      metrics.sort((a, b) => {
+        const aVal = sort === 'avgScore' ? a.avgScore : a.attempts;
+        const bVal = sort === 'avgScore' ? b.avgScore : b.attempts;
+        return order === 'desc' ? bVal - aVal : aVal - bVal;
+      });
+
+      // Paginate
+      const totalStudents = metrics.length;
+      const paginatedMetrics = metrics.slice(page * pageSize, (page + 1) * pageSize);
+
+      return new Response(
+        JSON.stringify({
+          snapshotDate: date,
+          period: 'all',
+          cohortId: null,
           totalStudents: totalStudents,
           page: page,
           pageSize: pageSize,

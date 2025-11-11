@@ -15,11 +15,9 @@ const AdminLeaderboard = () => {
   const {
     toast
   } = useToast();
-  const [period, setPeriod] = useState<'daily' | 'weekly'>('weekly');
+  const [period, setPeriod] = useState<'daily' | 'weekly' | 'all'>('all');
   const [date, setDate] = useState(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
+    return new Date().toISOString().split('T')[0];
   });
   const [cohortId, setCohortId] = useState<string>('all');
   const [metrics, setMetrics] = useState<any[]>([]);
@@ -253,9 +251,10 @@ const AdminLeaderboard = () => {
               <div>
                 <label className="text-sm font-medium mb-2 block">Period</label>
                 <Tabs value={period} onValueChange={v => setPeriod(v as any)} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 rounded-xl">
-                    <TabsTrigger value="daily" className="rounded-lg">Daily</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-3 rounded-xl">
+                    <TabsTrigger value="all" className="rounded-lg">All Time</TabsTrigger>
                     <TabsTrigger value="weekly" className="rounded-lg">Weekly</TabsTrigger>
+                    <TabsTrigger value="daily" className="rounded-lg">Daily</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>

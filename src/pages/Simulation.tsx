@@ -140,23 +140,77 @@ const Simulation = () => {
       ];
       setLabTests(tests);
 
-      // Start simulation run
-      const { data: runData, error: runError } = await supabase.functions.invoke("start_simulation", {
-        body: {
-          assignment_id: assignmentId,
-        },
-      });
+      // Check for existing run or start new one
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Not authenticated");
 
-      if (runError) throw runError;
+      const { data: existingRun, error: runCheckError } = await supabase
+        .from("simulation_runs")
+        .select("id, transcript, actions")
+        .eq("assignment_id", assignmentId)
+        .eq("student_id", user.user.id)
+        .eq("status", "in_progress")
+        .maybeSingle();
 
-      setRunId(runData.run_id);
+      if (runCheckError) throw runCheckError;
 
-      // Set initial patient message - brief and natural
-      setMessages([{
-        role: "patient",
-        content: `Namaste Doctor. I'm ${clinical?.patient?.name || "the patient"}. I've been having some problems.`,
-        timestamp: new Date(),
-      }]);
+      if (existingRun) {
+        // Restore existing progress
+        setRunId(existingRun.id);
+        
+        // Restore messages from transcript
+        if (existingRun.transcript && Array.isArray(existingRun.transcript)) {
+          const restoredMessages = existingRun.transcript.map((msg: any) => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp || Date.now()),
+          }));
+          setMessages(restoredMessages);
+        }
+
+        // Restore exam findings and lab tests from actions
+        if (existingRun.actions && Array.isArray(existingRun.actions)) {
+          const examActions = existingRun.actions.filter((a: any) => a.type === "exam_revealed");
+          const labActions = existingRun.actions.filter((a: any) => a.type === "lab_ordered");
+          
+          if (examActions.length > 0) {
+            setExamFindings(prev => prev.map(finding => ({
+              ...finding,
+              revealed: examActions.some((a: any) => a.examName === finding.name)
+            })));
+          }
+          
+          if (labActions.length > 0) {
+            setLabTests(prev => prev.map(test => ({
+              ...test,
+              ordered: labActions.some((a: any) => a.testName === test.name)
+            })));
+          }
+        }
+
+        toast({
+          title: "Progress restored",
+          description: "Continuing from where you left off",
+        });
+      } else {
+        // Start new simulation run
+        const { data: runData, error: runError } = await supabase.functions.invoke("start_simulation", {
+          body: {
+            assignment_id: assignmentId,
+          },
+        });
+
+        if (runError) throw runError;
+        setRunId(runData.run_id);
+
+        // Set initial patient message
+        const initialMessage = {
+          role: "patient" as const,
+          content: `Namaste Doctor. I'm ${clinical?.patient?.name || "the patient"}. I've been having some problems.`,
+          timestamp: new Date(),
+        };
+        setMessages([initialMessage]);
+      }
 
       setLoading(false);
     } catch (error: any) {
@@ -205,7 +259,8 @@ const Simulation = () => {
       timestamp: new Date(),
     };
 
-    setMessages([...messages, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput("");
     setIsSending(true);
 
@@ -235,7 +290,20 @@ const Simulation = () => {
         content: data.response,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, vpResponse]);
+      const newMessages = [...updatedMessages, vpResponse];
+      setMessages(newMessages);
+
+      // Save progress to database
+      await supabase
+        .from("simulation_runs")
+        .update({ 
+          transcript: newMessages.map(m => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.timestamp.toISOString()
+          }))
+        })
+        .eq("id", runId);
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -248,7 +316,8 @@ const Simulation = () => {
     }
   };
 
-  const handleRevealExam = (index: number) => {
+  const handleRevealExam = async (index: number) => {
+    const examName = examFindings[index]?.name;
     setExamFindings((prev) =>
       prev.map((finding, i) => (i === index ? { ...finding, revealed: true } : finding))
     );
@@ -258,11 +327,35 @@ const Simulation = () => {
       actor_role: "student",
       case_id: caseData?.id || "unknown",
       run_id: runId,
-      extra: { exam_type: examFindings[index]?.name },
+      extra: { exam_type: examName },
     });
+
+    // Save exam action to database
+    try {
+      const { data: currentRun } = await supabase
+        .from("simulation_runs")
+        .select("actions")
+        .eq("id", runId)
+        .single();
+
+      const existingActions = Array.isArray(currentRun?.actions) ? currentRun.actions : [];
+      const updatedActions = [...existingActions, {
+        type: "exam_revealed",
+        examName,
+        timestamp: new Date().toISOString()
+      }];
+
+      await supabase
+        .from("simulation_runs")
+        .update({ actions: updatedActions })
+        .eq("id", runId);
+    } catch (error) {
+      console.error("Error saving exam action:", error);
+    }
   };
 
-  const handleOrderLab = (index: number) => {
+  const handleOrderLab = async (index: number) => {
+    const testName = labTests[index]?.name;
     setLabTests((prev) =>
       prev.map((test, i) => (i === index ? { ...test, ordered: true } : test))
     );
@@ -272,12 +365,35 @@ const Simulation = () => {
       actor_role: "student",
       case_id: caseData?.id || "unknown",
       run_id: runId,
-      extra: { lab_test: labTests[index]?.name },
+      extra: { lab_test: testName },
     });
     toast({
       title: "Lab ordered",
-      description: `${labTests[index].name.replace(/_/g, " ")} has been ordered`,
+      description: `${testName.replace(/_/g, " ")} has been ordered`,
     });
+
+    // Save lab action to database
+    try {
+      const { data: currentRun } = await supabase
+        .from("simulation_runs")
+        .select("actions")
+        .eq("id", runId)
+        .single();
+
+      const existingActions = Array.isArray(currentRun?.actions) ? currentRun.actions : [];
+      const updatedActions = [...existingActions, {
+        type: "lab_ordered",
+        testName,
+        timestamp: new Date().toISOString()
+      }];
+
+      await supabase
+        .from("simulation_runs")
+        .update({ actions: updatedActions })
+        .eq("id", runId);
+    } catch (error) {
+      console.error("Error saving lab action:", error);
+    }
   };
 
   const handleSubmit = async () => {
@@ -578,25 +694,14 @@ const Simulation = () => {
 
       {/* Action Buttons - Fixed at bottom */}
       <div className="border-t bg-card px-4 py-3">
-        <div className="flex gap-2">
-          <Button
-            onClick={() => navigate(`/diagnosis/${runId}`)}
-            className="flex-1 rounded-2xl"
-            size="lg"
-            disabled={messages.length < 2}
-          >
-            Proceed: Diagnose
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            variant="outline"
-            className="flex-1 rounded-2xl"
-            size="lg"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Early"}
-          </Button>
-        </div>
+        <Button
+          onClick={() => navigate(`/diagnosis/${runId}`)}
+          className="w-full rounded-2xl"
+          size="lg"
+          disabled={messages.length < 2}
+        >
+          Proceed to Diagnosis
+        </Button>
       </div>
     </div>
   );

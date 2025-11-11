@@ -290,18 +290,24 @@ const DiagnosisSelection = () => {
 
         {/* Confirmation Checkbox */}
         {selectedOption && (
-          <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-start gap-3 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg">
             <Checkbox
               id="confirm"
               checked={confirmed}
               onCheckedChange={(checked) => setConfirmed(checked as boolean)}
+              className="mt-0.5"
             />
-            <Label
-              htmlFor="confirm"
-              className="text-sm text-yellow-900 cursor-pointer leading-tight"
-            >
-              I confirm this is my final diagnosis
-            </Label>
+            <div className="flex-1">
+              <Label
+                htmlFor="confirm"
+                className="text-sm font-semibold text-amber-900 cursor-pointer block mb-1"
+              >
+                ✓ Confirm your final diagnosis
+              </Label>
+              <p className="text-xs text-amber-700">
+                Check this box to enable the "Confirm Diagnosis" button
+              </p>
+            </div>
           </div>
         )}
 

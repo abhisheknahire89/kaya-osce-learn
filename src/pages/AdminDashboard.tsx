@@ -15,6 +15,7 @@ const AdminDashboard = () => {
   } = useToast();
   const [dailyLeaderboard, setDailyLeaderboard] = useState<any[]>([]);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<any[]>([]);
+  const [allCasesPlayed, setAllCasesPlayed] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalStudents: 0,
     activeAssessments: 0,
@@ -138,6 +139,52 @@ const AdminDashboard = () => {
       // Set leaderboards
       setDailyLeaderboard(dailyMetrics);
       setWeeklyLeaderboard(weeklyMetrics);
+
+      // Fetch all simulation runs with case and student details
+      const { data: allRunsWithDetails, error: detailsError } = await supabase
+        .from("simulation_runs")
+        .select(`
+          id,
+          student_id,
+          assignment_id,
+          status,
+          score_json,
+          start_at,
+          end_at,
+          assignments (
+            case_id,
+            cases (
+              id,
+              title
+            )
+          )
+        `)
+        .order('start_at', { ascending: false });
+
+      if (detailsError) {
+        console.error('Error fetching all cases played:', detailsError);
+      } else {
+        // Enrich with student names
+        const enrichedRuns = allRunsWithDetails?.map((run: any) => {
+          const profile = profileMap.get(run.student_id);
+          const caseTitle = run.assignments?.cases?.title || 'Unknown Case';
+          const normalizedScore = run.score_json?.totalPoints && run.score_json?.maxPoints
+            ? Math.round((run.score_json.totalPoints / run.score_json.maxPoints) * 100)
+            : null;
+
+          return {
+            id: run.id,
+            studentName: profile?.name || 'Unknown Student',
+            caseTitle,
+            status: run.status,
+            score: normalizedScore,
+            startedAt: run.start_at,
+            completedAt: run.end_at
+          };
+        }) || [];
+
+        setAllCasesPlayed(enrichedRuns);
+      }
 
       console.log('Successfully loaded admin dashboard data');
 
@@ -264,9 +311,10 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="weekly" className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl">
+              <TabsList className="grid w-full max-w-md grid-cols-3 rounded-xl">
                 <TabsTrigger value="daily" className="rounded-lg">Today</TabsTrigger>
                 <TabsTrigger value="weekly" className="rounded-lg">This Week</TabsTrigger>
+                <TabsTrigger value="allcases" className="rounded-lg">All Cases</TabsTrigger>
               </TabsList>
 
               <TabsContent value="daily" className="mt-6">
@@ -333,7 +381,47 @@ const AdminDashboard = () => {
                             </Badge>
                           </div>
                         </div>;
-                })}
+                 })}
+                  </div>}
+              </TabsContent>
+
+              <TabsContent value="allcases" className="mt-6">
+                {allCasesPlayed.length === 0 ? <Alert className="rounded-xl">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      No cases played yet. Students will appear here once they start assessments.
+                    </AlertDescription>
+                  </Alert> : <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-3 px-4 font-semibold text-foreground">Student</th>
+                          <th className="text-left py-3 px-4 font-semibold text-foreground">Case</th>
+                          <th className="text-center py-3 px-4 font-semibold text-foreground">Status</th>
+                          <th className="text-center py-3 px-4 font-semibold text-foreground">Score</th>
+                          <th className="text-right py-3 px-4 font-semibold text-foreground">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allCasesPlayed.map((run) => <tr key={run.id} className="border-b border-border/50 hover:bg-accent/5 transition-colors">
+                            <td className="py-3 px-4 text-foreground">{run.studentName}</td>
+                            <td className="py-3 px-4 text-foreground">{run.caseTitle}</td>
+                            <td className="py-3 px-4 text-center">
+                              <Badge variant={run.status === 'completed' ? 'default' : 'secondary'} className="rounded-full">
+                                {run.status}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {run.score !== null ? <span className={`font-bold ${getGradeColor(run.score)}`}>
+                                  {run.score}%
+                                </span> : <span className="text-muted-foreground">-</span>}
+                            </td>
+                            <td className="py-3 px-4 text-right text-sm text-muted-foreground">
+                              {new Date(run.startedAt).toLocaleDateString()}
+                            </td>
+                          </tr>)}
+                      </tbody>
+                    </table>
                   </div>}
               </TabsContent>
             </Tabs>

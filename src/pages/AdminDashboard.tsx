@@ -29,65 +29,77 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
-      // Calculate date ranges
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch all profiles to get total students count
+      const { data: allProfiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, name");
+      
+      if (profilesError) throw profilesError;
 
-      // Fetch all profiles first to get total students
-      const {
-        data: allProfiles,
-        error: allProfilesError
-      } = await supabase.from("profiles").select("id, name");
-      if (allProfilesError) throw allProfilesError;
+      // Use admin_leaderboard edge function to get all-time data (bypasses RLS properly)
+      const { data: allTimeData, error: allTimeError } = await supabase.functions.invoke('admin_leaderboard', {
+        body: {
+          period: 'all',
+          date: today,
+          page: 0,
+          pageSize: 1000, // Get all students
+          sort: 'avgScore',
+          order: 'desc'
+        }
+      });
 
-      // Fetch all scored runs
-      const {
-        data: allRuns,
-        error: runsError
-      } = await supabase.from("simulation_runs").select("id, student_id, score_json, created_at, status, end_at").eq("status", "completed");
-      if (runsError) throw runsError;
+      if (allTimeError) throw allTimeError;
 
-      // Create a map of student profiles
-      const profileMap = new Map(allProfiles?.map(p => [p.id, p]) || []);
+      // Use admin_leaderboard for daily data
+      const { data: dailyData, error: dailyError } = await supabase.functions.invoke('admin_leaderboard', {
+        body: {
+          period: 'daily',
+          date: today,
+          page: 0,
+          pageSize: 1000,
+          sort: 'avgScore',
+          order: 'desc'
+        }
+      });
 
-      // Enrich runs with profile data
-      const enrichedRuns = allRuns?.map(run => ({
-        ...run,
-        profiles: profileMap.get(run.student_id)
-      })).filter(run => run.profiles) || [];
+      if (dailyError) throw dailyError;
 
-      // Calculate stats
-      const studentsWithScores = new Set(enrichedRuns.map(r => r.student_id));
-      const scores = enrichedRuns.map(r => (r.score_json as any)?.percent || 0).filter(s => s > 0);
-      const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+      // Use admin_leaderboard for weekly data
+      const { data: weeklyData, error: weeklyError } = await supabase.functions.invoke('admin_leaderboard', {
+        body: {
+          period: 'weekly',
+          date: today,
+          page: 0,
+          pageSize: 1000,
+          sort: 'avgScore',
+          order: 'desc'
+        }
+      });
 
-      // Calculate completion rate (students who completed at least one assessment)
-      const completionRate = allProfiles?.length ? Math.round(studentsWithScores.size / allProfiles.length * 100) : 0;
+      if (weeklyError) throw weeklyError;
+
+      // Calculate stats from all-time data
+      const allTimeMetrics = allTimeData?.metrics || [];
+      const totalAttempts = allTimeMetrics.reduce((sum: number, m: any) => sum + m.attempts, 0);
+      const totalScore = allTimeMetrics.reduce((sum: number, m: any) => sum + (m.avgScore * m.attempts), 0);
+      const avgScore = totalAttempts > 0 ? Math.round(totalScore / totalAttempts) : 0;
+      const completionRate = allProfiles?.length > 0 
+        ? Math.round((allTimeMetrics.length / allProfiles.length) * 100) 
+        : 0;
+
       setStats({
         totalStudents: allProfiles?.length || 0,
-        activeAssessments: enrichedRuns.length,
-        avgScore: Math.round(avgScore),
+        activeAssessments: totalAttempts,
+        avgScore: avgScore,
         completionRate
       });
 
-      // Build daily leaderboard - use end_at for when assessment was completed
-      const dailyRuns = enrichedRuns.filter(r => {
-        if (!r.end_at) return false;
-        const endDate = new Date(r.end_at);
-        return endDate >= todayStart;
-      });
-      const dailyByStudent = buildLeaderboard(dailyRuns);
-      setDailyLeaderboard(dailyByStudent);
+      // Set leaderboards
+      setDailyLeaderboard(dailyData?.metrics || []);
+      setWeeklyLeaderboard(weeklyData?.metrics || []);
 
-      // Build weekly leaderboard - use end_at for when assessment was completed
-      const weeklyRuns = enrichedRuns.filter(r => {
-        if (!r.end_at) return false;
-        const endDate = new Date(r.end_at);
-        return endDate >= weekStart;
-      });
-      const weeklyByStudent = buildLeaderboard(weeklyRuns);
-      setWeeklyLeaderboard(weeklyByStudent);
     } catch (error: any) {
       console.error("Error fetching admin data:", error);
       toast({
@@ -98,36 +110,6 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-  const buildLeaderboard = (runs: any[]) => {
-    const studentMap: Record<string, {
-      name: string;
-      scores: number[];
-      count: number;
-    }> = {};
-    runs.forEach(run => {
-      const studentId = run.student_id;
-      const studentName = run.profiles?.name || "Unknown Student";
-      const score = (run.score_json as any)?.percent || 0;
-      if (!studentMap[studentId]) {
-        studentMap[studentId] = {
-          name: studentName,
-          scores: [],
-          count: 0
-        };
-      }
-      if (score > 0) {
-        studentMap[studentId].scores.push(score);
-      }
-      studentMap[studentId].count += 1;
-    });
-    const leaderboard = Object.entries(studentMap).filter(([_, data]) => data.scores.length > 0).map(([studentId, data]) => ({
-      studentId,
-      name: data.name,
-      avgScore: data.scores.reduce((a, b) => a + b, 0) / data.scores.length,
-      attempts: data.count
-    })).sort((a, b) => b.avgScore - a.avgScore);
-    return leaderboard;
   };
   const getRankBadge = (rank: number) => {
     if (rank === 1) return {
@@ -255,6 +237,7 @@ const AdminDashboard = () => {
                     {dailyLeaderboard.map((student, idx) => {
                   const rank = idx + 1;
                   const badge = getRankBadge(rank);
+                  const displayScore = Math.round(student.avgScore * 10); // Convert 0-10 scale to 0-100
                   return <div key={student.studentId} className="flex items-center gap-4 p-4 bg-accent/5 rounded-xl hover:bg-accent/10 transition-colors">
                           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-accent text-accent-foreground font-bold">
                             {badge.icon}
@@ -266,8 +249,8 @@ const AdminDashboard = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className={`text-2xl font-bold ${getGradeColor(student.avgScore)}`}>
-                              {Math.round(student.avgScore)}%
+                            <p className={`text-2xl font-bold ${getGradeColor(displayScore)}`}>
+                              {displayScore}%
                             </p>
                             <Badge variant={badge.variant} className="mt-1 rounded-full">
                               Rank #{rank}
@@ -288,6 +271,7 @@ const AdminDashboard = () => {
                     {weeklyLeaderboard.map((student, idx) => {
                   const rank = idx + 1;
                   const badge = getRankBadge(rank);
+                  const displayScore = Math.round(student.avgScore * 10); // Convert 0-10 scale to 0-100
                   return <div key={student.studentId} className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${rank <= 3 ? "bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20" : "bg-accent/5 hover:bg-accent/10"}`}>
                           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-accent text-accent-foreground font-bold">
                             {badge.icon}
@@ -299,8 +283,8 @@ const AdminDashboard = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className={`text-2xl font-bold ${getGradeColor(student.avgScore)}`}>
-                              {Math.round(student.avgScore)}%
+                            <p className={`text-2xl font-bold ${getGradeColor(displayScore)}`}>
+                              {displayScore}%
                             </p>
                             <Badge variant={badge.variant} className="mt-1 rounded-full">
                               Rank #{rank}

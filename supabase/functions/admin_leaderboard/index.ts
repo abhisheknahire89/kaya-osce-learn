@@ -41,28 +41,47 @@ serve(async (req) => {
       throw new Error('Unauthorized: Admin role required');
     }
 
-    // Handle POST for refresh
+    // Handle POST for refresh or fetch
     if (req.method === 'POST') {
-      const { period, snapshot_date, cohort_id } = await req.json();
+      const body = await req.json();
+      const { period, snapshot_date, cohort_id, refresh, page, pageSize, sort, order, subject } = body;
       
-      // Trigger snapshot regeneration
-      const { data: jobData, error: jobError } = await supabase.functions.invoke('generate_leaderboard_snapshot', {
-        body: { period, snapshot_date, cohort_id },
-      });
+      // If refresh is explicitly requested, trigger snapshot regeneration
+      if (refresh === true) {
+        const { data: jobData, error: jobError } = await supabase.functions.invoke('generate_leaderboard_snapshot', {
+          body: { period, snapshot_date, cohort_id },
+        });
 
-      if (jobError) throw jobError;
+        if (jobError) throw jobError;
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          jobId: 'refresh-' + Date.now(),
-          status: 'completed',
-          data: jobData,
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+        return new Response(
+          JSON.stringify({
+            success: true,
+            jobId: 'refresh-' + Date.now(),
+            status: 'completed',
+            data: jobData,
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
+      // Otherwise, treat POST as a fetch request with body params
+      // Extract params from body for POST requests
+      const fetchPeriod = period || 'weekly';
+      const fetchDate = snapshot_date || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const fetchPage = page !== undefined ? page : 0;
+      const fetchPageSize = pageSize || 25;
+      const fetchSort = sort || 'avgScore';
+      const fetchOrder = order || 'desc';
+      const fetchCohortId = cohort_id;
+      const fetchSubject = subject;
+
+      console.log('POST Leaderboard request:', { period: fetchPeriod, date: fetchDate, cohortId: fetchCohortId, subject: fetchSubject, page: fetchPage, pageSize: fetchPageSize, sort: fetchSort, order: fetchOrder });
+
+      // Continue with fetch logic using these params
+      return await handleFetch(supabase, fetchPeriod, fetchDate, fetchCohortId, fetchSubject, fetchPage, fetchPageSize, fetchSort, fetchOrder, corsHeaders);
     }
 
     // Handle GET for leaderboard data
@@ -76,7 +95,38 @@ serve(async (req) => {
     const sort = url.searchParams.get('sort') || 'avgScore';
     const order = url.searchParams.get('order') || 'desc';
 
-    console.log('Leaderboard request:', { period, date, cohortId, subject, page, pageSize, sort, order });
+    console.log('GET Leaderboard request:', { period, date, cohortId, subject, page, pageSize, sort, order });
+
+    return await handleFetch(supabase, period, date, cohortId, subject, page, pageSize, sort, order, corsHeaders);
+
+  } catch (error) {
+    console.error('Error in admin_leaderboard:', error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }),
+      {
+        status: error instanceof Error && error.message.includes('Unauthorized') ? 403 : 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});
+
+// Extract fetch logic into a separate function to avoid duplication
+async function handleFetch(
+  supabase: any,
+  period: string,
+  date: string,
+  cohortId: string | null,
+  subject: string | null,
+  page: number,
+  pageSize: number,
+  sort: string,
+  order: string,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  try {
 
     // If subject filter is present, compute on-the-fly
     if (subject) {
@@ -116,46 +166,46 @@ serve(async (req) => {
       if (runsError) throw runsError;
 
       // Fetch profiles separately
-      const studentIds = [...new Set(runs?.map(r => r.student_id) || [])];
+      const studentIds = [...new Set(runs?.map((r: any) => r.student_id) || [])];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name, metadata')
         .in('id', studentIds);
 
       // Fetch assignments and cases
-      const assignmentIds = [...new Set(runs?.map(r => r.assignment_id).filter(Boolean) || [])];
+      const assignmentIds = [...new Set(runs?.map((r: any) => r.assignment_id).filter(Boolean) || [])];
       const { data: assignments } = await supabase
         .from('assignments')
         .select('id, case_id')
         .in('id', assignmentIds);
 
-      const caseIds = [...new Set(assignments?.map(a => a.case_id).filter(Boolean) || [])];
+      const caseIds = [...new Set(assignments?.map((a: any) => a.case_id).filter(Boolean) || [])];
       const { data: cases } = await supabase
         .from('cases')
         .select('id, subject')
         .in('id', caseIds);
 
       // Create maps
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-      const assignmentMap = new Map(assignments?.map(a => [a.id, a]) || []);
-      const caseMap = new Map(cases?.map(c => [c.id, c]) || []);
+      const profileMap = new Map(profiles?.map((p: any) => [p.id, p]) || []);
+      const assignmentMap = new Map(assignments?.map((a: any) => [a.id, a]) || []);
+      const caseMap = new Map(cases?.map((c: any) => [c.id, c]) || []);
 
       // Filter by subject and compute metrics
-      const filteredRuns = runs?.filter(run => {
-        const assignment = assignmentMap.get(run.assignment_id);
+      const filteredRuns = runs?.filter((run: any) => {
+        const assignment: any = assignmentMap.get(run.assignment_id);
         if (!assignment) return false;
-        const caseData = caseMap.get(assignment.case_id);
+        const caseData: any = caseMap.get(assignment.case_id);
         return caseData?.subject === subject;
       }) || [];
 
       const studentMetrics: Record<string, any> = {};
 
-      filteredRuns.forEach(run => {
+      filteredRuns.forEach((run: any) => {
         const studentId = run.student_id;
         const scoreData = run.score_json as any;
         const percent = scoreData?.percentage || 0;
         const normalizedScore = percent / 10; // Convert to 0-10 scale
-        const profile = profileMap.get(studentId);
+        const profile: any = profileMap.get(studentId);
         const profileMetadata = profile?.metadata as any;
         const studentCohortId = profileMetadata?.cohort_id;
 
@@ -232,18 +282,18 @@ serve(async (req) => {
       if (runsError) throw runsError;
 
       // Fetch profiles
-      const studentIds = [...new Set(runs?.map(r => r.student_id) || [])];
+      const studentIds = [...new Set(runs?.map((r: any) => r.student_id) || [])];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name')
         .in('id', studentIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const profileMap = new Map(profiles?.map((p: any) => [p.id, p]) || []);
 
       // Compute metrics per student
       const studentMetrics = new Map<string, { scores: number[]; lastAttemptAt: string }>();
 
-      runs?.forEach(run => {
+      runs?.forEach((run: any) => {
         if (!run.score_json?.totalPoints || !run.score_json?.maxPoints) return;
         
         const normalizedScore = (run.score_json.totalPoints / run.score_json.maxPoints) * 10;
@@ -261,11 +311,11 @@ serve(async (req) => {
 
       // Build final metrics array
       const metrics = Array.from(studentMetrics.entries()).map(([studentId, data]) => {
-        const profile = profileMap.get(studentId);
+        const profile: any = profileMap.get(studentId);
         return {
           studentId,
           name: profile?.name || 'Unknown',
-          avgScore: data.scores.reduce((a, b) => a + b, 0) / data.scores.length,
+          avgScore: data.scores.reduce((a: number, b: number) => a + b, 0) / data.scores.length,
           attempts: data.scores.length,
           lastAttemptAt: data.lastAttemptAt,
         };
@@ -370,15 +420,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in admin_leaderboard:', error);
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: error instanceof Error && error.message.includes('Unauthorized') ? 403 : 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    console.error('Error in handleFetch:', error);
+    throw error;
   }
-});
+}

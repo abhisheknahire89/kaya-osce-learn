@@ -140,37 +140,51 @@ const AdminDashboard = () => {
       setDailyLeaderboard(dailyMetrics);
       setWeeklyLeaderboard(weeklyMetrics);
 
-      // Fetch all simulation runs with case and student details
-      const { data: allRunsWithDetails, error: detailsError } = await supabase
+      // Fetch all simulation runs
+      const { data: allRunsData, error: runsDataError } = await supabase
         .from("simulation_runs")
-        .select(`
-          id,
-          student_id,
-          assignment_id,
-          status,
-          score_json,
-          start_at,
-          end_at,
-          assignments (
-            case_id,
-            cases (
-              id,
-              title
-            )
-          )
-        `)
+        .select("id, student_id, assignment_id, status, score_json, start_at, end_at")
         .order('start_at', { ascending: false });
 
-      if (detailsError) {
-        console.error('Error fetching all cases played:', detailsError);
+      if (runsDataError) {
+        console.error('Error fetching all cases played:', runsDataError);
       } else {
-        // Enrich with student names
-        const enrichedRuns = allRunsWithDetails?.map((run: any) => {
+        console.log('Total runs fetched:', allRunsData?.length);
+        
+        // Fetch assignments to get case_id
+        const assignmentIds = allRunsData?.map(r => r.assignment_id).filter(Boolean) || [];
+        const { data: assignmentsData } = await supabase
+          .from("assignments")
+          .select("id, case_id")
+          .in('id', assignmentIds);
+
+        // Create assignment map
+        const assignmentMap = new Map(assignmentsData?.map(a => [a.id, a]) || []);
+
+        // Fetch cases to get titles
+        const caseIds = assignmentsData?.map(a => a.case_id).filter(Boolean) || [];
+        const { data: casesData } = await supabase
+          .from("cases")
+          .select("id, title")
+          .in('id', caseIds);
+
+        // Create case map
+        const caseMap = new Map(casesData?.map(c => [c.id, c]) || []);
+
+        console.log('Cases fetched:', casesData?.length);
+
+        // Enrich runs with student names and case titles
+        const enrichedRuns = allRunsData?.map((run: any) => {
           const profile = profileMap.get(run.student_id);
-          const caseTitle = run.assignments?.cases?.title || 'Unknown Case';
+          const assignment = assignmentMap.get(run.assignment_id);
+          const caseData = assignment ? caseMap.get(assignment.case_id) : null;
+          const caseTitle = caseData?.title || 'Unknown Case';
+          
           const normalizedScore = run.score_json?.totalPoints && run.score_json?.maxPoints
             ? Math.round((run.score_json.totalPoints / run.score_json.maxPoints) * 100)
             : null;
+
+          console.log('Run:', run.id, 'Case:', caseTitle, 'Score:', normalizedScore);
 
           return {
             id: run.id,

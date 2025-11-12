@@ -29,16 +29,16 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Verify admin or faculty role
+    // Verify admin role
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .single();
 
-    if (roleError || (roleData?.role !== 'admin' && roleData?.role !== 'faculty')) {
+    if (roleError || roleData?.role !== 'admin') {
       console.warn('Unauthorized access attempt by', user.id);
-      throw new Error('Unauthorized: Admin or Faculty role required');
+      throw new Error('Unauthorized: Admin role required');
     }
 
     // Handle POST for refresh

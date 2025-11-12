@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { BarChart3, TrendingUp, Users, Award, Loader2, Calendar, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { BarChart3, TrendingUp, Users, Award, Loader2, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardHeader } from "@/components/faculty/DashboardHeader";
@@ -199,25 +197,18 @@ const AdminAnalytics = () => {
       <DashboardHeader />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header with back button */}
-        <div className="mb-6 flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild className="rounded-xl">
-            <Link to="/admin">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <BarChart3 className="h-8 w-8 text-primary" />
-              Admin — Analytics
-              <span className="text-base font-normal text-muted-foreground ml-2" lang="hi">
-                विश्लेषण
-              </span>
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Comprehensive performance analytics and insights
-            </p>
-          </div>
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <BarChart3 className="h-8 w-8 text-primary" />
+            Admin — Analytics
+            <span className="text-base font-normal text-muted-foreground ml-2" lang="hi">
+              विश्लेषण
+            </span>
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Comprehensive performance analytics and insights
+          </p>
         </div>
 
         {/* Filters */}

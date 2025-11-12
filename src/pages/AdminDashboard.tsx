@@ -71,13 +71,21 @@ const AdminDashboard = () => {
         completionRate
       });
 
-      // Build daily leaderboard
-      const dailyRuns = enrichedRuns.filter(r => new Date(r.created_at) >= todayStart);
+      // Build daily leaderboard - use end_at for when assessment was completed
+      const dailyRuns = enrichedRuns.filter(r => {
+        if (!r.end_at) return false;
+        const endDate = new Date(r.end_at);
+        return endDate >= todayStart;
+      });
       const dailyByStudent = buildLeaderboard(dailyRuns);
       setDailyLeaderboard(dailyByStudent);
 
-      // Build weekly leaderboard
-      const weeklyRuns = enrichedRuns.filter(r => new Date(r.created_at) >= weekStart);
+      // Build weekly leaderboard - use end_at for when assessment was completed
+      const weeklyRuns = enrichedRuns.filter(r => {
+        if (!r.end_at) return false;
+        const endDate = new Date(r.end_at);
+        return endDate >= weekStart;
+      });
       const weeklyByStudent = buildLeaderboard(weeklyRuns);
       setWeeklyLeaderboard(weeklyByStudent);
     } catch (error: any) {

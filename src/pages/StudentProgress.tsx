@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TopMicroHeader } from "@/components/layout/TopMicroHeader";
 
@@ -13,6 +13,14 @@ const StudentProgress = () => {
       />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-6">
+          <Button variant="ghost" size="icon" asChild className="rounded-xl">
+            <Link to="/student">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+        </div>
+        
         <Card className="rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

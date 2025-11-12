@@ -271,13 +271,41 @@ async function handleFetch(
       );
     }
 
-    // For "all" period, compute on-the-fly (no snapshots)
-    if (period === 'all') {
-      // Fetch all completed runs
-      const { data: runs, error: runsError } = await supabase
+    // For "all" period, "daily" period, and "weekly" period - compute on-the-fly (no snapshots)
+    if (period === 'all' || period === 'daily' || period === 'weekly') {
+      // Calculate date range based on period
+      let dateFilter = null;
+      if (period === 'daily') {
+        // Today only
+        const todayStart = new Date(date);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(date);
+        todayEnd.setHours(23, 59, 59, 999);
+        dateFilter = { start: todayStart.toISOString(), end: todayEnd.toISOString() };
+      } else if (period === 'weekly') {
+        // Last 7 days including today
+        const weekEnd = new Date(date);
+        weekEnd.setHours(23, 59, 59, 999);
+        const weekStart = new Date(weekEnd);
+        weekStart.setDate(weekStart.getDate() - 6);
+        weekStart.setHours(0, 0, 0, 0);
+        dateFilter = { start: weekStart.toISOString(), end: weekEnd.toISOString() };
+      }
+
+      // Fetch completed runs with optional date filter
+      let runsQuery = supabase
         .from('simulation_runs')
         .select('student_id, score_json, end_at')
-        .eq('status', 'completed');
+        .eq('status', 'completed')
+        .not('end_at', 'is', null);
+
+      if (dateFilter) {
+        runsQuery = runsQuery
+          .gte('end_at', dateFilter.start)
+          .lte('end_at', dateFilter.end);
+      }
+
+      const { data: runs, error: runsError } = await runsQuery;
 
       if (runsError) throw runsError;
 
@@ -335,7 +363,7 @@ async function handleFetch(
       return new Response(
         JSON.stringify({
           snapshotDate: date,
-          period: 'all',
+          period: period,
           cohortId: null,
           totalStudents: totalStudents,
           page: page,

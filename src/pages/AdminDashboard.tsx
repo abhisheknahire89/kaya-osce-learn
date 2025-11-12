@@ -35,83 +35,95 @@ const AdminDashboard = () => {
         throw new Error('You must be logged in to view this data');
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      
+      console.log('Fetching admin dashboard data...');
+
       // Fetch all profiles to get total students count
       const { data: allProfiles, error: profilesError } = await supabase
         .from("profiles")
         .select("id, name");
       
-      if (profilesError) throw profilesError;
-
-      console.log('Fetching all-time leaderboard data...');
-      // Use admin_leaderboard edge function to get all-time data (bypasses RLS properly)
-      const { data: allTimeResponse, error: allTimeError } = await supabase.functions.invoke('admin_leaderboard', {
-        body: {
-          period: 'all',
-          date: today,
-          page: 0,
-          pageSize: 1000, // Get all students
-          sort: 'avgScore',
-          order: 'desc'
-        }
-      });
-
-      if (allTimeError) {
-        console.error('All-time fetch error:', allTimeError);
-        throw new Error(`Failed to fetch all-time data: ${allTimeError.message || 'Unknown error'}`);
+      if (profilesError) {
+        console.error('Profiles error:', profilesError);
+        throw profilesError;
       }
 
-      const allTimeData = allTimeResponse;
-      console.log('All-time data:', allTimeData);
+      console.log('Fetched profiles:', allProfiles?.length);
 
-      console.log('Fetching daily leaderboard data...');
-      // Use admin_leaderboard for daily data
-      const { data: dailyResponse, error: dailyError } = await supabase.functions.invoke('admin_leaderboard', {
-        body: {
-          period: 'daily',
-          date: today,
-          page: 0,
-          pageSize: 1000,
-          sort: 'avgScore',
-          order: 'desc'
-        }
-      });
+      // Fetch all completed simulation runs with scores
+      const { data: allRuns, error: runsError } = await supabase
+        .from("simulation_runs")
+        .select("id, student_id, score_json, end_at")
+        .eq("status", "completed")
+        .not("end_at", "is", null)
+        .not("score_json", "is", null);
 
-      if (dailyError) {
-        console.error('Daily fetch error:', dailyError);
-        throw new Error(`Failed to fetch daily data: ${dailyError.message || 'Unknown error'}`);
+      if (runsError) {
+        console.error('Runs error:', runsError);
+        throw runsError;
       }
 
-      const dailyData = dailyResponse;
-      console.log('Daily data:', dailyData);
+      console.log('Fetched runs:', allRuns?.length);
 
-      console.log('Fetching weekly leaderboard data...');
-      // Use admin_leaderboard for weekly data
-      const { data: weeklyResponse, error: weeklyError } = await supabase.functions.invoke('admin_leaderboard', {
-        body: {
-          period: 'weekly',
-          date: today,
-          page: 0,
-          pageSize: 1000,
-          sort: 'avgScore',
-          order: 'desc'
-        }
-      });
+      // Create profile map
+      const profileMap = new Map(allProfiles?.map(p => [p.id, p]) || []);
 
-      if (weeklyError) {
-        console.error('Weekly fetch error:', weeklyError);
-        throw new Error(`Failed to fetch weekly data: ${weeklyError.message || 'Unknown error'}`);
-      }
+      // Calculate date ranges
+      const now = new Date();
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const weekStart = new Date(now);
+      weekStart.setDate(weekStart.getDate() - 6);
+      weekStart.setHours(0, 0, 0, 0);
 
-      const weeklyData = weeklyResponse;
-      console.log('Weekly data:', weeklyData);
+      // Build student metrics
+      const buildMetrics = (runs: any[]) => {
+        const studentMetrics = new Map<string, { scores: number[]; lastAttemptAt: string }>();
+
+        runs?.forEach((run: any) => {
+          if (!run.score_json?.totalPoints || !run.score_json?.maxPoints) return;
+          
+          const normalizedScore = (run.score_json.totalPoints / run.score_json.maxPoints) * 10;
+          
+          if (!studentMetrics.has(run.student_id)) {
+            studentMetrics.set(run.student_id, { scores: [], lastAttemptAt: run.end_at });
+          }
+          
+          const metrics = studentMetrics.get(run.student_id)!;
+          metrics.scores.push(normalizedScore);
+          if (new Date(run.end_at) > new Date(metrics.lastAttemptAt)) {
+            metrics.lastAttemptAt = run.end_at;
+          }
+        });
+
+        return Array.from(studentMetrics.entries()).map(([studentId, data]) => {
+          const profile: any = profileMap.get(studentId);
+          return {
+            studentId,
+            name: profile?.name || 'Unknown',
+            avgScore: data.scores.reduce((a: number, b: number) => a + b, 0) / data.scores.length,
+            attempts: data.scores.length,
+            lastAttemptAt: data.lastAttemptAt,
+          };
+        }).sort((a, b) => b.avgScore - a.avgScore);
+      };
+
+      // Filter runs for different periods
+      const todayRuns = allRuns?.filter(r => new Date(r.end_at) >= todayStart) || [];
+      const weekRuns = allRuns?.filter(r => new Date(r.end_at) >= weekStart) || [];
+
+      // Build leaderboards
+      const dailyMetrics = buildMetrics(todayRuns);
+      const weeklyMetrics = buildMetrics(weekRuns);
+      const allTimeMetrics = buildMetrics(allRuns || []);
+
+      console.log('Daily metrics:', dailyMetrics.length);
+      console.log('Weekly metrics:', weeklyMetrics.length);
+      console.log('All-time metrics:', allTimeMetrics.length);
 
       // Calculate stats from all-time data
-      const allTimeMetrics = allTimeData?.metrics || [];
-      const totalAttempts = allTimeMetrics.reduce((sum: number, m: any) => sum + m.attempts, 0);
-      const totalScore = allTimeMetrics.reduce((sum: number, m: any) => sum + (m.avgScore * m.attempts), 0);
-      const avgScore = totalAttempts > 0 ? Math.round(totalScore / totalAttempts) : 0;
+      const totalAttempts = allTimeMetrics.reduce((sum, m) => sum + m.attempts, 0);
+      const totalScore = allTimeMetrics.reduce((sum, m) => sum + (m.avgScore * m.attempts), 0);
+      const avgScore = totalAttempts > 0 ? Math.round((totalScore / totalAttempts) * 10) : 0;
       const completionRate = allProfiles?.length > 0 
         ? Math.round((allTimeMetrics.length / allProfiles.length) * 100) 
         : 0;
@@ -124,23 +136,17 @@ const AdminDashboard = () => {
       });
 
       // Set leaderboards
-      setDailyLeaderboard(dailyData?.metrics || []);
-      setWeeklyLeaderboard(weeklyData?.metrics || []);
+      setDailyLeaderboard(dailyMetrics);
+      setWeeklyLeaderboard(weeklyMetrics);
 
       console.log('Successfully loaded admin dashboard data');
 
     } catch (error: any) {
       console.error("Error fetching admin data:", error);
       
-      // Provide more specific error messages
-      let errorMessage = error.message || "Unknown error occurred";
-      if (error.message?.includes('NetworkError') || error.message?.includes('Failed to send')) {
-        errorMessage = "Network error. Please check your connection and try again.";
-      }
-      
       toast({
         title: "Failed to load admin data",
-        description: errorMessage,
+        description: error.message || "Unknown error occurred",
         variant: "destructive"
       });
     } finally {

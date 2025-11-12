@@ -29,6 +29,12 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('You must be logged in to view this data');
+      }
+
       const today = new Date().toISOString().split('T')[0];
       
       // Fetch all profiles to get total students count
@@ -38,8 +44,9 @@ const AdminDashboard = () => {
       
       if (profilesError) throw profilesError;
 
+      console.log('Fetching all-time leaderboard data...');
       // Use admin_leaderboard edge function to get all-time data (bypasses RLS properly)
-      const { data: allTimeData, error: allTimeError } = await supabase.functions.invoke('admin_leaderboard', {
+      const { data: allTimeResponse, error: allTimeError } = await supabase.functions.invoke('admin_leaderboard', {
         body: {
           period: 'all',
           date: today,
@@ -50,10 +57,17 @@ const AdminDashboard = () => {
         }
       });
 
-      if (allTimeError) throw allTimeError;
+      if (allTimeError) {
+        console.error('All-time fetch error:', allTimeError);
+        throw new Error(`Failed to fetch all-time data: ${allTimeError.message || 'Unknown error'}`);
+      }
 
+      const allTimeData = allTimeResponse;
+      console.log('All-time data:', allTimeData);
+
+      console.log('Fetching daily leaderboard data...');
       // Use admin_leaderboard for daily data
-      const { data: dailyData, error: dailyError } = await supabase.functions.invoke('admin_leaderboard', {
+      const { data: dailyResponse, error: dailyError } = await supabase.functions.invoke('admin_leaderboard', {
         body: {
           period: 'daily',
           date: today,
@@ -64,10 +78,17 @@ const AdminDashboard = () => {
         }
       });
 
-      if (dailyError) throw dailyError;
+      if (dailyError) {
+        console.error('Daily fetch error:', dailyError);
+        throw new Error(`Failed to fetch daily data: ${dailyError.message || 'Unknown error'}`);
+      }
 
+      const dailyData = dailyResponse;
+      console.log('Daily data:', dailyData);
+
+      console.log('Fetching weekly leaderboard data...');
       // Use admin_leaderboard for weekly data
-      const { data: weeklyData, error: weeklyError } = await supabase.functions.invoke('admin_leaderboard', {
+      const { data: weeklyResponse, error: weeklyError } = await supabase.functions.invoke('admin_leaderboard', {
         body: {
           period: 'weekly',
           date: today,
@@ -78,7 +99,13 @@ const AdminDashboard = () => {
         }
       });
 
-      if (weeklyError) throw weeklyError;
+      if (weeklyError) {
+        console.error('Weekly fetch error:', weeklyError);
+        throw new Error(`Failed to fetch weekly data: ${weeklyError.message || 'Unknown error'}`);
+      }
+
+      const weeklyData = weeklyResponse;
+      console.log('Weekly data:', weeklyData);
 
       // Calculate stats from all-time data
       const allTimeMetrics = allTimeData?.metrics || [];
@@ -100,11 +127,20 @@ const AdminDashboard = () => {
       setDailyLeaderboard(dailyData?.metrics || []);
       setWeeklyLeaderboard(weeklyData?.metrics || []);
 
+      console.log('Successfully loaded admin dashboard data');
+
     } catch (error: any) {
       console.error("Error fetching admin data:", error);
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || "Unknown error occurred";
+      if (error.message?.includes('NetworkError') || error.message?.includes('Failed to send')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      }
+      
       toast({
         title: "Failed to load admin data",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

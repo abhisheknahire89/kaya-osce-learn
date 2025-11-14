@@ -1,12 +1,12 @@
-import { Home, Clipboard, PlusCircle, BarChart3, User, Users } from "lucide-react";
+import { Home, Clipboard, PlusCircle, BarChart3, User, Users, BookOpen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
 const studentNavItems = [
   { key: "home", label: "Home", icon: Home, route: "/student" },
-  { key: "assigned", label: "Assigned", icon: Clipboard, route: "/student/assigned" },
-  { key: "remediation", label: "MCQs", icon: PlusCircle, route: "/student/remediation" },
+  { key: "assigned", label: "Cases", icon: Clipboard, route: "/student/assigned" },
+  { key: "lms", label: "Learn", icon: BookOpen, route: "/student/lms" },
   { key: "progress", label: "Progress", icon: BarChart3, route: "/student/progress" },
   { key: "profile", label: "Profile", icon: User, route: "/student/profile" },
 ];
@@ -14,8 +14,8 @@ const studentNavItems = [
 const facultyNavItems = [
   { key: "home", label: "Home", icon: Home, route: "/faculty" },
   { key: "library", label: "Library", icon: Clipboard, route: "/faculty/library" },
+  { key: "lms", label: "LMS", icon: BookOpen, route: "/faculty/lms" },
   { key: "create", label: "Create", icon: PlusCircle, route: "/faculty/generate-case" },
-  { key: "analytics", label: "Analytics", icon: BarChart3, route: "/faculty/analytics" },
   { key: "profile", label: "Profile", icon: User, route: "/faculty/profile" },
 ];
 

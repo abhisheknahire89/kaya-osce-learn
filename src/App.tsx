@@ -19,6 +19,9 @@ import StudentAssigned from "./pages/StudentAssigned";
 import StudentProgress from "./pages/StudentProgress";
 import StudentRemediation from "./pages/StudentRemediation";
 import StudentProfile from "./pages/StudentProfile";
+import StudentLMS from "./pages/StudentLMS";
+import StudentCourseDetail from "./pages/StudentCourseDetail";
+import StudentModuleDetail from "./pages/StudentModuleDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLeaderboard from "./pages/AdminLeaderboard";
 import AdminAnalytics from "./pages/AdminAnalytics";
@@ -83,7 +86,31 @@ const App = () => (
               } 
             />
             <Route 
-              path="/student" 
+              path="/faculty/lms" 
+              element={
+                <ProtectedRoute requiredRole="faculty">
+                  <FacultyLMS />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/faculty/lms/courses/:courseId" 
+              element={
+                <ProtectedRoute requiredRole="faculty">
+                  <FacultyCourseDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/faculty/lms/modules/:moduleId" 
+              element={
+                <ProtectedRoute requiredRole="faculty">
+                  <FacultyModuleDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/student"
               element={
                 <ProtectedRoute requiredRole="student">
                   <StudentDashboard />
@@ -122,7 +149,31 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route
+            <Route 
+              path="/student/lms" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentLMS />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/student/lms/courses/:courseId" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentCourseDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/student/lms/modules/:moduleId" 
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentModuleDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/admin"
               element={
                 <ProtectedRoute requiredRole="admin">

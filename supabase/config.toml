@@ -35,3 +35,6 @@ verify_jwt = true
 
 [functions.admin_leaderboard_export]
 verify_jwt = true
+
+[functions.generate_quiz]
+verify_jwt = true

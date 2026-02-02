@@ -6,11 +6,11 @@ import { BookOpen, CheckCircle2 } from "lucide-react";
 import { TopMicroHeader } from "@/components/layout/TopMicroHeader";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface Course {
-  id: string;
-  title: string;
-  description: string;
+type CourseRow = Tables<"courses">;
+
+interface Course extends CourseRow {
   module_count: number;
   completed_count: number;
 }
@@ -32,7 +32,7 @@ const StudentLMS = () => {
       // Fetch published courses
       const { data: coursesData, error: coursesError } = await supabase
         .from("courses")
-        .select("id, title, description")
+        .select("id, title, description, is_published, faculty_id, created_at, updated_at")
         .eq("is_published", true)
         .order("created_at", { ascending: false });
 
@@ -40,31 +40,36 @@ const StudentLMS = () => {
 
       // For each course, count modules and completed modules
       const coursesWithProgress = await Promise.all(
-        (coursesData || []).map(async (course) => {
+        ((coursesData as CourseRow[]) || []).map(async (course) => {
           const { count: moduleCount } = await supabase
             .from("modules")
             .select("*", { count: "exact", head: true })
             .eq("course_id", course.id)
             .eq("is_published", true);
 
-          const { count: completedCount } = await supabase
-            .from("module_progress")
-            .select("*", { count: "exact", head: true })
-            .eq("student_id", user.id)
-            .eq("is_completed", true)
-            .in("module_id", 
-              (await supabase
-                .from("modules")
-                .select("id")
-                .eq("course_id", course.id)
-                .eq("is_published", true)
-              ).data?.map(m => m.id) || []
-            );
+          const { data: moduleIds } = await supabase
+            .from("modules")
+            .select("id")
+            .eq("course_id", course.id)
+            .eq("is_published", true);
+
+          const moduleIdList = moduleIds?.map(m => m.id) || [];
+
+          let completedCount = 0;
+          if (moduleIdList.length > 0) {
+            const { count } = await supabase
+              .from("module_progress")
+              .select("*", { count: "exact", head: true })
+              .eq("student_id", user.id)
+              .eq("is_completed", true)
+              .in("module_id", moduleIdList);
+            completedCount = count || 0;
+          }
 
           return {
             ...course,
             module_count: moduleCount || 0,
-            completed_count: completedCount || 0,
+            completed_count: completedCount,
           };
         })
       );

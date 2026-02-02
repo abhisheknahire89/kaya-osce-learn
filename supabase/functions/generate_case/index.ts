@@ -112,36 +112,54 @@ serve(async (req) => {
     const params = GenerateCaseParamsSchema.parse(await req.json());
     console.log('Generating case with params:', params);
 
-    // Build Gemini prompt
-    const systemPrompt = `You are "Kaya Case Generator", an evidence-aware clinical case author for Ayurvedic undergraduate training aligned to NCISM CBDC. 
+    // Build Gemini prompt with NCISM 3-level rubric structure
+    const systemPrompt = `You are "Kaya Case Generator", an evidence-aware clinical case author for Ayurvedic undergraduate training aligned to NCISM CBDC and CBME standards.
 
 CRITICAL: Output ONLY the raw JSON object. Do NOT wrap it in markdown code blocks or backticks. Do NOT add any explanatory text before or after the JSON.
 
-Use English for clinical text. Add Devanagari headings where specified. 
+Use English for clinical text. Add Devanagari headings where specified.
 
-IMPORTANT RUBRIC STRUCTURE:
-Every case MUST include a "Clinical Resource Stewardship" section in the rubric with this exact structure:
+## NCISM 3-LEVEL RUBRIC STRUCTURE (MANDATORY):
+Every rubric item MUST use the NCISM 3-level scoring format with these fields:
+- "id": unique identifier (e.g., "H1", "E2", "D1")
+- "text": criterion description
+- "maxMarks": 2 (standardized for 0/1/2 scoring)
+- "millerLevel": "Knows" | "KnowsHow" | "ShowsHow" | "Does"
+- "ncismDomain": "History" | "Examination" | "Diagnosis" | "Management" | "Communication" | "Resource Stewardship"
+- "scoringCriteria": { "score0": "Not demonstrated", "score1": "Partially demonstrated", "score2": "Fully demonstrated" }
+- "implicitReasoningCues": array of keywords that earn partial credit
+
+## RUBRIC SECTIONS (MANDATORY):
+1. History Taking (Rogi Pariksha - Prashna) - ncismDomain: "History"
+2. Examination/Investigation (Sparsha Pariksha) - ncismDomain: "Examination"  
+3. Diagnosis (Nidana) - ncismDomain: "Diagnosis"
+4. Management (Chikitsa) - ncismDomain: "Management"
+5. Communication (Samvada) - ncismDomain: "Communication"
+6. Clinical Resource Stewardship - ncismDomain: "Resource Stewardship"
+
+## CLINICAL RESOURCE STEWARDSHIP (REQUIRED):
+Every case MUST include:
 {
   "section": "Clinical Resource Stewardship",
   "max": 2,
-  "items": [
-    { 
-      "id": "RS1", 
-      "text": "Ordered only relevant investigations (avoided unnecessary tests)", 
-      "weight": 2,
-      "tip": "Good clinicians order targeted investigations, not shotgun testing"
+  "ncismDomain": "Resource Stewardship",
+  "millerLevel": "Does",
+  "items": [{
+    "id": "RS1",
+    "text": "Ordered only relevant investigations (avoided unnecessary tests)",
+    "maxMarks": 2,
+    "millerLevel": "Does",
+    "ncismDomain": "Resource Stewardship",
+    "scoringCriteria": {
+      "score0": "Ordered multiple unnecessary tests (shotgun approach)",
+      "score1": "Ordered mostly relevant tests but included 1 unnecessary test",
+      "score2": "Ordered only targeted, clinically indicated investigations"
     }
-  ]
+  }]
 }
 
-IMPORTANT CITATION RULES:
-1. For RUBRIC items (case reasoning, clinical assessment): Include evidence-based citations from the reference PDF at /public/references/References_Books_Resources.pdf. Use format: [file-REFERENCE-NAME] where REFERENCE-NAME matches a book from the PDF (e.g., [file-CHARAKA-SAMHITA], [file-BHAVAPRAKASHA], [file-KAYACHIKITSA-TEXTBOOK]).
-2. For MCQ rationales: Do NOT include citations. Keep them concise and educational without references.
-3. Rubric items must cite authoritative Ayurvedic texts to justify clinical reasoning and assessment criteria.
-
-Examples:
-- Rubric item: "Correctly identifies Kapha-Vata imbalance as primary pathology [file-CHARAKA-SAMHITA]"
-- MCQ rationale: "This presentation indicates Tamaka Shwasa due to episodic dyspnoea and wheezing, classically aggravated by cold."`;
+## IMPLICIT REASONING CREDIT:
+For each rubric item, include "implicitReasoningCues" - keywords that demonstrate understanding even without exact terminology. This allows partial credit for clinical reasoning.`;
 
 const userPrompt = `Create a ClinicalCase JSON object with these parameters:
 - subject: ${params.subject}

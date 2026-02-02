@@ -10,14 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  is_published: boolean;
-  created_at: string;
-}
+type Course = Tables<"courses">;
 
 const FacultyLMS = () => {
   const navigate = useNavigate();
@@ -38,7 +33,7 @@ const FacultyLMS = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setCourses(data || []);
+      setCourses((data as Course[]) || []);
     } catch (error) {
       console.error("Error fetching courses:", error);
       toast.error("Failed to load courses");
@@ -73,7 +68,7 @@ const FacultyLMS = () => {
       toast.success("Course created successfully");
       setCreateDialogOpen(false);
       setNewCourse({ title: "", description: "" });
-      setCourses([data, ...courses]);
+      setCourses([data as Course, ...courses]);
       navigate(`/faculty/lms/courses/${data.id}`);
     } catch (error) {
       console.error("Error creating course:", error);

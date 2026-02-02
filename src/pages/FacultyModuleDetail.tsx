@@ -12,21 +12,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface Material {
-  id: string;
-  type: string;
-  title: string;
-  file_url: string | null;
-  content: string | null;
+type Module = Tables<"modules">;
+type Material = Tables<"materials">;
+type Quiz = Tables<"quizzes">;
+
+interface ModuleWithCourse extends Module {
+  courses: { id: string; title: string } | null;
 }
 
 const FacultyModuleDetail = () => {
   const { moduleId } = useParams();
   const navigate = useNavigate();
-  const [module, setModule] = useState<any>(null);
+  const [module, setModule] = useState<ModuleWithCourse | null>(null);
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [quiz, setQuiz] = useState<any>(null);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
   const [addMaterialOpen, setAddMaterialOpen] = useState(false);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
@@ -52,7 +53,7 @@ const FacultyModuleDetail = () => {
         .single();
 
       if (moduleError) throw moduleError;
-      setModule(moduleData);
+      setModule(moduleData as ModuleWithCourse);
 
       const { data: materialsData, error: materialsError } = await supabase
         .from("materials")
@@ -60,7 +61,7 @@ const FacultyModuleDetail = () => {
         .eq("module_id", moduleId);
 
       if (materialsError) throw materialsError;
-      setMaterials(materialsData || []);
+      setMaterials((materialsData as Material[]) || []);
 
       const { data: quizData } = await supabase
         .from("quizzes")
@@ -68,7 +69,7 @@ const FacultyModuleDetail = () => {
         .eq("module_id", moduleId)
         .maybeSingle();
 
-      setQuiz(quizData);
+      setQuiz(quizData as Quiz | null);
     } catch (error) {
       console.error("Error fetching module:", error);
       toast.error("Failed to load module");
@@ -106,7 +107,7 @@ const FacultyModuleDetail = () => {
       toast.success("Material added successfully");
       setAddMaterialOpen(false);
       setNewMaterial({ type: "text", title: "", content: "", file_url: "" });
-      setMaterials([...materials, data]);
+      setMaterials([...materials, data as Material]);
     } catch (error) {
       console.error("Error adding material:", error);
       toast.error("Failed to add material");
@@ -135,7 +136,7 @@ const FacultyModuleDetail = () => {
       const { data, error } = await supabase.functions.invoke("generate_quiz", {
         body: {
           content,
-          moduleTitle: module.title,
+          moduleTitle: module?.title,
           numQuestions: 5
         }
       });
@@ -151,7 +152,7 @@ const FacultyModuleDetail = () => {
         .from("quizzes")
         .insert([{
           module_id: moduleId,
-          title: `${module.title} Quiz`
+          title: `${module?.title} Quiz`
         }])
         .select()
         .single();
@@ -174,7 +175,7 @@ const FacultyModuleDetail = () => {
       if (questionsError) throw questionsError;
 
       toast.success("Quiz generated successfully!");
-      setQuiz(quizData);
+      setQuiz(quizData as Quiz);
     } catch (error: any) {
       console.error("Error generating quiz:", error);
       toast.error(error.message || "Failed to generate quiz");
@@ -184,6 +185,7 @@ const FacultyModuleDetail = () => {
   };
 
   const toggleModulePublish = async () => {
+    if (!module) return;
     try {
       const { error } = await supabase
         .from("modules")
@@ -232,7 +234,7 @@ const FacultyModuleDetail = () => {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <Button 
           variant="ghost" 
-          onClick={() => navigate(`/faculty/lms/courses/${module.courses.id}`)}
+          onClick={() => navigate(`/faculty/lms/courses/${module.courses?.id}`)}
           className="mb-6 rounded-xl"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -246,13 +248,13 @@ const FacultyModuleDetail = () => {
                 <CardTitle className="text-2xl">{module.title}</CardTitle>
                 <CardDescription className="mt-2">{module.description}</CardDescription>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Course: {module.courses.title}
+                  Course: {module.courses?.title}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <Label>Published</Label>
                 <Switch 
-                  checked={module.is_published}
+                  checked={module.is_published ?? false}
                   onCheckedChange={toggleModulePublish}
                 />
               </div>

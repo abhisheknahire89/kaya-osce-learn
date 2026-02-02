@@ -3,23 +3,23 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Circle, ArrowLeft, Lock } from "lucide-react";
+import { CheckCircle2, ArrowLeft, Lock } from "lucide-react";
 import { TopMicroHeader } from "@/components/layout/TopMicroHeader";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface Module {
-  id: string;
-  title: string;
-  description: string;
-  order_index: number;
+type CourseRow = Tables<"courses">;
+type ModuleRow = Tables<"modules">;
+
+interface Module extends ModuleRow {
   is_completed: boolean;
 }
 
 const StudentCourseDetail = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const [course, setCourse] = useState<any>(null);
+  const [course, setCourse] = useState<CourseRow | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +42,7 @@ const StudentCourseDetail = () => {
         .single();
 
       if (courseError) throw courseError;
-      setCourse(courseData);
+      setCourse(courseData as CourseRow);
 
       const { data: modulesData, error: modulesError } = await supabase
         .from("modules")
@@ -55,7 +55,7 @@ const StudentCourseDetail = () => {
 
       // Check completion status for each module
       const modulesWithProgress = await Promise.all(
-        (modulesData || []).map(async (module) => {
+        ((modulesData as ModuleRow[]) || []).map(async (module) => {
           const { data: progressData } = await supabase
             .from("module_progress")
             .select("is_completed")

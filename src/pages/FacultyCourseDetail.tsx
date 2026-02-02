@@ -10,21 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface Module {
-  id: string;
-  title: string;
-  description: string;
-  order_index: number;
-  is_published: boolean;
-}
+type Course = Tables<"courses">;
+type Module = Tables<"modules">;
 
 const FacultyCourseDetail = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const [course, setCourse] = useState<any>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModuleOpen, setCreateModuleOpen] = useState(false);
@@ -46,7 +41,7 @@ const FacultyCourseDetail = () => {
         .single();
 
       if (courseError) throw courseError;
-      setCourse(courseData);
+      setCourse(courseData as Course);
 
       const { data: modulesData, error: modulesError } = await supabase
         .from("modules")
@@ -55,7 +50,7 @@ const FacultyCourseDetail = () => {
         .order("order_index", { ascending: true });
 
       if (modulesError) throw modulesError;
-      setModules(modulesData || []);
+      setModules((modulesData as Module[]) || []);
     } catch (error) {
       console.error("Error fetching course:", error);
       toast.error("Failed to load course");
@@ -88,7 +83,7 @@ const FacultyCourseDetail = () => {
       toast.success("Module created successfully");
       setCreateModuleOpen(false);
       setNewModule({ title: "", description: "" });
-      setModules([...modules, data]);
+      setModules([...modules, data as Module]);
     } catch (error) {
       console.error("Error creating module:", error);
       toast.error("Failed to create module");
@@ -96,6 +91,7 @@ const FacultyCourseDetail = () => {
   };
 
   const toggleCoursePublish = async () => {
+    if (!course) return;
     setPublishLoading(true);
     try {
       const { error } = await supabase
@@ -165,7 +161,7 @@ const FacultyCourseDetail = () => {
                 <div className="flex items-center gap-2">
                   <Label>Published</Label>
                   <Switch 
-                    checked={course.is_published}
+                    checked={course.is_published ?? false}
                     onCheckedChange={toggleCoursePublish}
                     disabled={publishLoading}
                   />

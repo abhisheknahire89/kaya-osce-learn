@@ -6,21 +6,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle2, ArrowLeft, FileText, Video, Play, ExternalLink } from "lucide-react";
 import { TopMicroHeader } from "@/components/layout/TopMicroHeader";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface Material {
-  id: string;
-  type: string;
-  title: string;
-  file_url: string | null;
-  content: string | null;
+type ModuleRow = Tables<"modules">;
+type MaterialRow = Tables<"materials">;
+type QuizRow = Tables<"quizzes">;
+
+interface ModuleWithCourse extends ModuleRow {
+  courses: { id: string; title: string } | null;
 }
 
 const StudentModuleDetail = () => {
   const { moduleId } = useParams();
   const navigate = useNavigate();
-  const [module, setModule] = useState<any>(null);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [quiz, setQuiz] = useState<any>(null);
+  const [module, setModule] = useState<ModuleWithCourse | null>(null);
+  const [materials, setMaterials] = useState<MaterialRow[]>([]);
+  const [quiz, setQuiz] = useState<QuizRow | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +44,7 @@ const StudentModuleDetail = () => {
         .single();
 
       if (moduleError) throw moduleError;
-      setModule(moduleData);
+      setModule(moduleData as ModuleWithCourse);
 
       const { data: materialsData, error: materialsError } = await supabase
         .from("materials")
@@ -51,7 +52,7 @@ const StudentModuleDetail = () => {
         .eq("module_id", moduleId);
 
       if (materialsError) throw materialsError;
-      setMaterials(materialsData || []);
+      setMaterials((materialsData as MaterialRow[]) || []);
 
       const { data: quizData } = await supabase
         .from("quizzes")
@@ -59,7 +60,7 @@ const StudentModuleDetail = () => {
         .eq("module_id", moduleId)
         .maybeSingle();
 
-      setQuiz(quizData);
+      setQuiz(quizData as QuizRow | null);
 
       const { data: progressData } = await supabase
         .from("module_progress")
@@ -135,7 +136,7 @@ const StudentModuleDetail = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Button 
           variant="ghost" 
-          onClick={() => navigate(`/student/lms/courses/${module.courses.id}`)}
+          onClick={() => navigate(`/student/lms/courses/${module.courses?.id}`)}
           className="mb-6 rounded-xl"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -154,7 +155,7 @@ const StudentModuleDetail = () => {
                 </CardTitle>
                 <CardDescription className="mt-2">{module.description}</CardDescription>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Course: {module.courses.title}
+                  Course: {module.courses?.title}
                 </p>
               </div>
             </div>

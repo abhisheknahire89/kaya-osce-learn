@@ -1,11 +1,13 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// NCISM Domain types
+type NCISMDomain = "History" | "Examination" | "Diagnosis" | "Management" | "Communication" | "Procedural" | "Resource Stewardship";
+
 // Reference citation helper - uses comprehensive Ayurvedic reference library
 const getCitationForTopic = (topic: string): string => {
   const topicLower = topic.toLowerCase();
 
-  // Map clinical topics to appropriate textbook citations
   if (topicLower.includes("agni") || topicLower.includes("appetite") || topicLower.includes("digestion")) {
     return "Dravyaguna Vigyana by Acharya Priyavrata Sharma, Chaukhambha Bharti Academy, Varanasi";
   }
@@ -48,9 +50,24 @@ const getCitationForTopic = (topic: string): string => {
   if (topicLower.includes("osce") || topicLower.includes("assessment") || topicLower.includes("rubric")) {
     return "A Text Book of Dravyaguna Vijnana by Dr. Prakash L. Hegde and Dr. Harini A., Chaukhambha Publications";
   }
+  if (topicLower.includes("child") || topicLower.includes("pediatric") || topicLower.includes("kaumarabhritya")) {
+    return "Kaumarabhritya (Ayurvedic Paediatrics) by Dr. A.K. Sharma, Chaukhambha Orientalia, Varanasi";
+  }
 
-  // Default comprehensive reference
   return "Dravyaguna Vigyana by Acharya Priyavrata Sharma, Chaukhambha Bharti Academy, Varanasi";
+};
+
+// Map NCISM domain from section name
+const mapSectionToNCISMDomain = (sectionName: string): NCISMDomain => {
+  const name = sectionName.toLowerCase();
+  if (name.includes("history")) return "History";
+  if (name.includes("exam") || name.includes("investigation")) return "Examination";
+  if (name.includes("diagnosis") || name.includes("differential")) return "Diagnosis";
+  if (name.includes("management") || name.includes("treatment")) return "Management";
+  if (name.includes("communication") || name.includes("counsel")) return "Communication";
+  if (name.includes("procedure") || name.includes("skill")) return "Procedural";
+  if (name.includes("resource") || name.includes("stewardship")) return "Resource Stewardship";
+  return "Diagnosis"; // Default
 };
 
 const corsHeaders = {
@@ -75,153 +92,344 @@ serve(async (req) => {
       throw new Error('Missing required fields');
     }
 
-    console.log('Scoring simulation run:', run_id);
+    console.log('Scoring simulation run with NCISM 3-level rubric:', run_id);
 
     const transcriptArray = Array.isArray(transcript) ? transcript : [];
     const actionsArray = Array.isArray(actions) ? actions : [];
 
-    // Rule-based scoring for structured actions
-    // Provide fallback rubric if none exists
+    // Check if this is a Kaumarabhritya (pediatric) case
+    const isChildCase = caseData.childAppropriate || 
+      caseData.subject?.toLowerCase().includes("kaumarabhritya") ||
+      (caseData.patient?.age && caseData.patient.age < 12);
+
+    // Provide fallback rubric if none exists - now with NCISM structure
     const rubric = caseData.rubric || [
       {
         section: "History Taking",
-        max: 5,
+        max: 10,
+        ncismDomain: "History",
+        millerLevel: "ShowsHow",
         items: [
-          { id: "H1", text: "Obtained chief complaint", weight: 1, tip: "Always start with the patient's main concern" },
-          { id: "H2", text: "Asked about onset and duration", weight: 1, tip: "Timeline is crucial for diagnosis" },
-          { id: "H3", text: "Inquired about aggravating factors", weight: 1, tip: "Understanding triggers helps management" },
-          { id: "H4", text: "Asked about associated symptoms", weight: 1, tip: "Related symptoms provide diagnostic clues" },
-          { id: "H5", text: "Explored patient's concerns", weight: 1, tip: "Patient-centered care improves outcomes" },
+          { 
+            id: "H1", 
+            text: "Elicited chief complaint with SOCRATES approach", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "History",
+            scoringCriteria: {
+              score0: "Did not ask about primary symptoms",
+              score1: "Asked generally but missed specific characterization",
+              score2: "Explicitly elicited onset, duration, character, and severity"
+            },
+            implicitReasoningCues: ["when started", "how long", "describe", "onset", "duration"]
+          },
+          { 
+            id: "H2", 
+            text: "Explored aggravating and relieving factors", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "History",
+            scoringCriteria: {
+              score0: "Did not explore",
+              score1: "Asked about one factor only",
+              score2: "Systematically explored both aggravating and relieving factors"
+            },
+            implicitReasoningCues: ["worse when", "better after", "triggers", "relief"]
+          },
+          { 
+            id: "H3", 
+            text: "Inquired about associated symptoms", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "History"
+          },
+          { 
+            id: "H4", 
+            text: "Assessed Ayurvedic history (Agni, Koshtha, Prakriti)", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "History",
+            implicitReasoningCues: ["appetite", "digestion", "bowel", "sleep", "constitution"]
+          },
+          { 
+            id: "H5", 
+            text: "Explored lifestyle and social context (Vihara, Achara)", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "History"
+          },
         ],
       },
       {
-        section: "Diagnosis & Management",
-        max: 5,
+        section: "Examination & Investigation",
+        max: 10,
+        ncismDomain: "Examination",
+        millerLevel: "ShowsHow",
         items: [
-          { id: "D1", text: "Formulated working diagnosis", weight: 2, tip: "Clear diagnosis guides treatment" },
-          { id: "M1", text: "Proposed appropriate management", weight: 2, tip: "Evidence-based treatment is essential" },
-          { id: "M2", text: "Explained treatment plan to patient", weight: 1, tip: "Patient understanding improves compliance" },
+          { 
+            id: "E1", 
+            text: "Performed Nadi Pariksha with dosha interpretation", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "Examination",
+            scoringCriteria: {
+              score0: "Did not perform pulse examination",
+              score1: "Performed Nadi Pariksha but did not interpret",
+              score2: "Performed and verbalized dosha characteristics"
+            }
+          },
+          { 
+            id: "E2", 
+            text: "Assessed relevant physical signs (tongue, skin, etc.)", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "Examination"
+          },
+          { 
+            id: "E3", 
+            text: "Ordered relevant investigations", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "Examination"
+          },
+          { 
+            id: "E4", 
+            text: "Interpreted investigation results appropriately", 
+            maxMarks: 2,
+            millerLevel: "KnowsHow",
+            ncismDomain: "Examination"
+          },
+          { 
+            id: "E5", 
+            text: "Integrated Ayurvedic and modern examination findings", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "Examination"
+          },
+        ],
+      },
+      {
+        section: "Diagnosis",
+        max: 4,
+        ncismDomain: "Diagnosis",
+        millerLevel: "KnowsHow",
+        items: [
+          { 
+            id: "D1", 
+            text: "Formulated correct Ayurvedic diagnosis with dosha identification", 
+            maxMarks: 2,
+            millerLevel: "KnowsHow",
+            ncismDomain: "Diagnosis",
+            scoringCriteria: {
+              score0: "Incorrect or no diagnosis stated",
+              score1: "Partially correct diagnosis or missing dosha component",
+              score2: "Complete diagnosis with correct dosha identification"
+            }
+          },
+          { 
+            id: "D2", 
+            text: "Considered appropriate differential diagnoses", 
+            maxMarks: 2,
+            millerLevel: "KnowsHow",
+            ncismDomain: "Diagnosis"
+          },
+        ],
+      },
+      {
+        section: "Management",
+        max: 4,
+        ncismDomain: "Management",
+        millerLevel: "ShowsHow",
+        items: [
+          { 
+            id: "M1", 
+            text: "Proposed appropriate Ayurvedic management plan", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "Management"
+          },
+          { 
+            id: "M2", 
+            text: "Explained treatment and follow-up to patient", 
+            maxMarks: 2,
+            millerLevel: "ShowsHow",
+            ncismDomain: "Communication"
+          },
         ],
       },
       {
         section: "Clinical Resource Stewardship",
         max: 2,
+        ncismDomain: "Resource Stewardship",
+        millerLevel: "Does",
         items: [
-          { id: "RS1", text: "Ordered only relevant investigations (avoided unnecessary tests)", weight: 2, tip: "Good clinicians order targeted investigations, not shotgun testing" },
+          { 
+            id: "RS1", 
+            text: "Ordered only relevant investigations (avoided unnecessary tests)", 
+            maxMarks: 2,
+            millerLevel: "Does",
+            ncismDomain: "Resource Stewardship",
+            scoringCriteria: {
+              score0: "Ordered multiple unnecessary tests (shotgun approach)",
+              score1: "Ordered mostly relevant tests but included 1 unnecessary test",
+              score2: "Ordered only relevant, targeted investigations"
+            }
+          },
         ],
       },
     ];
-    const achievedItems: Record<string, any> = {};
-    const missedItems: any[] = [];
+
     const sections: any[] = [];
     let maxScore = 0;
+    const allItems: any[] = [];
     
     // Build transcript text for LLM analysis
     const transcriptText = transcriptArray.map((msg: any) => 
       `${String(msg.role || 'unknown')}: ${String(msg.content || '')}`
     ).join('\n');
 
-    // Score each section - defer to LLM for accurate assessment
+    // Prepare items for scoring
     for (const section of rubric) {
       const sectionResult = {
         section: section.section,
         score: 0,
-        max: section.max,
+        max: section.max || section.items.reduce((sum: number, item: any) => sum + (item.maxMarks || item.weight || 2), 0),
+        ncismDomain: section.ncismDomain || mapSectionToNCISMDomain(section.section),
+        millerLevel: section.millerLevel || "ShowsHow",
         items: [] as any[],
       };
-      maxScore += section.max;
 
       for (const item of section.items) {
-        const itemWeight = item.weight || 1;
-        
-        // Initialize all items as not achieved - LLM will evaluate
+        const itemMaxMarks = item.maxMarks || item.weight || 2;
+        maxScore += itemMaxMarks;
+
         sectionResult.items.push({
           id: item.id,
           text: item.text,
+          maxMarks: itemMaxMarks,
           achieved: 0,
+          score: 0,
           evidence: null,
-          tip: item.tip || null,
+          tip: item.tip || item.examinerNotes || null,
           reference: item.reference || null,
+          millerLevel: item.millerLevel || section.millerLevel || "ShowsHow",
+          ncismDomain: item.ncismDomain || section.ncismDomain || mapSectionToNCISMDomain(section.section),
+          implicitCredit: false,
+          notApplicable: item.notApplicable || false,
         });
 
-        // Add all items for LLM analysis
-        missedItems.push(item);
+        allItems.push({
+          ...item,
+          sectionName: section.section,
+          maxMarks: itemMaxMarks,
+        });
       }
 
       sections.push(sectionResult);
     }
 
-    // OSCE-compliant LLM scoring with objective behavioral assessment
-    let llmScore = 0;
+    // NCISM-compliant LLM scoring with 3-level scale
+    let totalPoints = 0;
     const llmMatches: any[] = [];
     
-    if (missedItems.length > 0 && transcriptText.length > 10) {
-      // Build comprehensive context for OSCE-style scoring
+    if (allItems.length > 0 && transcriptText.length > 10) {
       const actionsText = actionsArray.map((a: any) => 
         `${a.type || a.action}: ${JSON.stringify(a)}`
       ).join('\n');
 
-      const scoringPrompt = `You are an OSCE examiner scoring a medical student's virtual patient encounter using standardized OSCE methodology.
+      // Build comprehensive criteria list with scoring criteria
+      const criteriaList = allItems.map(item => ({
+        id: item.id,
+        criterion: item.text,
+        section: item.sectionName,
+        maxMarks: item.maxMarks,
+        millerLevel: item.millerLevel || "ShowsHow",
+        ncismDomain: item.ncismDomain || mapSectionToNCISMDomain(item.sectionName),
+        scoringCriteria: item.scoringCriteria || {
+          score0: "Not demonstrated or incorrect",
+          score1: "Partially demonstrated or implicit understanding",
+          score2: "Fully demonstrated with explicit evidence"
+        },
+        implicitReasoningCues: item.implicitReasoningCues || [],
+      }));
 
-OSCE EVALUATION PRINCIPLES:
-- Assess OBSERVABLE BEHAVIORS only (what student actually said/did)
-- Use OBJECTIVE CRITERIA (did they perform the action? yes/no/partial)
-- Apply CONSISTENT STANDARDS across all students
-- Focus on COMPETENCY DEMONSTRATION (skill shown, not inferred)
-- Award points based on EXPLICIT EVIDENCE in transcript/actions
+      const scoringPrompt = `You are an NCISM-trained OSCE examiner assessing a BAMS student using competency-based medical education (CBME) principles.
 
-**SPECIAL EVALUATION - Clinical Resource Stewardship (RS1):**
-For criterion RS1 "Ordered only relevant investigations":
-- Review all lab tests ordered by the student (look for "lab_ordered" actions)
-- Identify which tests are RELEVANT (support the diagnosis) vs UNRELATED (normal/distractor tests)
-- Full credit (confidence 90-100): Student ordered ONLY relevant tests, avoided unnecessary tests
-- Partial credit (confidence 60-75): Student ordered mostly relevant tests but included 1 unnecessary test
-- No credit (confidence 0-59): Student ordered multiple unnecessary tests (shotgun approach)
-- This evaluates clinical reasoning and appropriate resource utilization
+## NCISM 3-LEVEL SCORING SCALE (for each criterion):
+- **2 = Fully demonstrated**: Explicit, correct, and complete demonstration
+- **1 = Partially demonstrated**: Implicit understanding shown OR incomplete demonstration
+- **0 = Not demonstrated**: Absent, incorrect, or inadequate
+- **N/A = Not applicable**: Criterion not relevant to this station (exclude from max score)
 
-RUBRIC CRITERIA TO EVALUATE:
-${JSON.stringify(missedItems.map(i => ({ 
-  id: i.id, 
-  criterion: i.text, 
-  weight: i.weight || 1,
-  section: sections.find(s => s.items.some((si: any) => si.id === i.id))?.section
-})), null, 2)}
+## IMPLICIT REASONING CREDIT RULES (CRITICAL):
+- Award Score 1 (Partial) if student demonstrates UNDERSTANDING without using exact terminology
+- Example: Student says "episodic breathlessness with wheezing, worse at night" → Award partial credit for "Identifies Tamaka Shwasa" even without naming it
+- Example: Student orders relevant labs without explicitly stating the differential → Award partial credit for "Demonstrates clinical reasoning"
+- Do NOT penalize for missing Sanskrit terms if the clinical concept is understood
+- Prioritize CLINICAL COMPETENCE over TERMINOLOGICAL PRECISION
 
-STUDENT PERFORMANCE RECORD:
+## NCISM GRADUATE ATTRIBUTES ASSESSED:
+- Clinician: History taking, examination, diagnosis
+- Communicator: Patient rapport, explanation, counseling  
+- Leader/Manager: Resource stewardship, appropriate referrals
+- Professional: Ethics, documentation, accountability
+- Scholar: Evidence-based reasoning, learning orientation
 
-Conversation Transcript:
+${isChildCase ? `
+## KAUMARABHRITYA (PEDIATRIC) SPECIAL RULES:
+- Award extra credit for age-appropriate dose calculations
+- Score 0 if adult doses suggested without modification for children
+- Award credit for recognizing when Shodhana (Panchakarma) is contraindicated in young children (<12 years)
+- Evaluate parent counseling quality (not just patient communication)
+- Credit for developmentally appropriate examination techniques
+` : ''}
+
+## RUBRIC CRITERIA TO EVALUATE:
+${JSON.stringify(criteriaList, null, 2)}
+
+## STUDENT PERFORMANCE RECORD:
+
+### Conversation Transcript:
 ${transcriptText}
 
-Documented Actions:
-${actionsText || "No documented actions"}
+### Documented Actions:
+${actionsText || "No documented actions recorded"}
 
-OSCE SCORING GUIDELINES:
-- Confidence 90-100: Criterion fully met with clear, explicit demonstration
-- Confidence 75-89: Criterion substantially met with good evidence
-- Confidence 60-74: Criterion partially met or implied but not fully demonstrated
-- Confidence 0-59: Criterion not adequately demonstrated or absent
+## EVALUATION INSTRUCTIONS:
+1. For each criterion, identify SPECIFIC EVIDENCE from transcript/actions
+2. Quote exactly what the student said/did as evidence
+3. Apply 3-level scoring based on clarity and completeness of demonstration
+4. Award Score 1 for implicit reasoning that shows understanding
+5. Use N/A only when criterion is genuinely inapplicable to this station
+6. For Resource Stewardship (RS1): Count tests ordered, identify relevant vs unnecessary based on case diagnosis
 
-EVALUATION INSTRUCTIONS:
-1. For each criterion, identify specific evidence (quote what student said/did)
-2. Match evidence to criterion using objective assessment
-3. Assign confidence based on strength and clarity of demonstration
-4. History-taking: Requires specific questions asked (not just discussed)
-5. Physical exam: Requires explicit examination performed
-6. Investigations: Requires clear ordering/requesting
-7. Diagnosis: Requires explicit statement of working diagnosis
-8. Management: Requires specific treatment plan articulated
-9. **Resource Stewardship (RS1)**: Count lab tests ordered, identify relevant vs unrelated based on case diagnosis, score based on appropriateness
+## CONFIDENCE-TO-SCORE MAPPING:
+- Confidence ≥85% → Score 2 (Fully demonstrated)
+- Confidence 65-84% → Score 1 (Partially demonstrated)
+- Confidence <65% → Score 0 (Not demonstrated)
 
 Return ONLY valid JSON in this exact format:
 {
   "matches": [
     {
       "itemId": "H1",
-      "demonstrated": true,
-      "confidence": 85,
-      "evidence": "Line 3: Student asked 'Can you tell me what brought you in today?' - explicitly elicited chief complaint"
+      "score": 2,
+      "confidence": 92,
+      "reasoning": "Student explicitly asked: 'When did the fever start and how would you describe it?' - demonstrates full SOCRATES approach",
+      "implicitCredit": false,
+      "evidence": "Line 3: 'When did the fever start...'"
+    },
+    {
+      "itemId": "H4",
+      "score": 1,
+      "confidence": 72,
+      "reasoning": "Student asked about appetite and digestion but did not explicitly assess Koshtha or Prakriti",
+      "implicitCredit": true,
+      "evidence": "Line 8: 'How is your appetite? Any changes in digestion?'"
     }
-  ]
+  ],
+  "globalRating": "Competent",
+  "overallComments": "Demonstrates solid clinical reasoning with minor gaps in Ayurvedic documentation"
 }`;
 
       try {
@@ -240,7 +448,7 @@ Return ONLY valid JSON in this exact format:
               }
             ],
             temperature: 0.2,
-            max_tokens: 2048,
+            max_tokens: 4096,
             response_format: { type: 'json_object' }
           }),
         });
@@ -251,7 +459,6 @@ Return ONLY valid JSON in this exact format:
           
           console.log('LLM Response received, length:', responseText.length);
           
-          // Parse JSON response
           let llmResult = null;
           try {
             llmResult = JSON.parse(responseText);
@@ -262,102 +469,152 @@ Return ONLY valid JSON in this exact format:
           }
           
           if (llmResult) {
-            
-            // Apply confidence thresholds
+            // Apply 3-level scoring from LLM results
             for (const match of llmResult.matches || []) {
-              const item = missedItems.find(i => i.id === match.itemId);
+              const item = allItems.find(i => i.id === match.itemId);
               if (!item) continue;
 
-              const itemWeight = item.weight || 1;
+              const itemMaxMarks = item.maxMarks || 2;
+              let pointsEarned = 0;
+
+              // Handle N/A case
+              if (match.score === "N/A") {
+                const section = sections.find(s => s.items.some((i: any) => i.id === match.itemId));
+                if (section) {
+                  section.max -= itemMaxMarks; // Reduce max score for N/A items
+                  maxScore -= itemMaxMarks;
+                  const sectionItem = section.items.find((i: any) => i.id === match.itemId);
+                  if (sectionItem) {
+                    sectionItem.achieved = "N/A";
+                    sectionItem.notApplicable = true;
+                  }
+                }
+                continue;
+              }
+
+              // Calculate points based on 3-level score
+              const score = typeof match.score === 'number' ? match.score : 0;
+              if (score === 2) {
+                pointsEarned = itemMaxMarks; // Full credit
+              } else if (score === 1) {
+                pointsEarned = itemMaxMarks * 0.5; // Half credit
+              } else {
+                pointsEarned = 0; // No credit
+              }
+
+              totalPoints += pointsEarned;
+
               llmMatches.push({
                 itemId: match.itemId,
+                score: match.score,
                 confidence: match.confidence,
+                implicitCredit: match.implicitCredit || false,
               });
 
-              // Update section scores based on strict confidence thresholds
-              if (match.confidence >= 75) {
-                // Full credit - clearly demonstrated
-                llmScore += itemWeight;
-                const section = sections.find(s => s.items.some((i: any) => i.id === match.itemId));
-                if (section) {
-                  section.score += itemWeight;
-                  const sectionItem = section.items.find((i: any) => i.id === match.itemId);
-                  if (sectionItem) {
-                    sectionItem.achieved = 1;
-                    sectionItem.evidence = match.evidence;
-                  }
-                }
-              } else if (match.confidence >= 60) {
-                // Partial credit - partially demonstrated
-                const partialPoints = itemWeight * 0.5;
-                llmScore += partialPoints;
-                const section = sections.find(s => s.items.some((i: any) => i.id === match.itemId));
-                if (section) {
-                  section.score += partialPoints;
-                  const sectionItem = section.items.find((i: any) => i.id === match.itemId);
-                  if (sectionItem) {
-                    sectionItem.achieved = 0.5;
-                    sectionItem.evidence = `Partial: ${match.evidence}`;
-                  }
+              // Update section scores
+              const section = sections.find(s => s.items.some((i: any) => i.id === match.itemId));
+              if (section) {
+                section.score += pointsEarned;
+                const sectionItem = section.items.find((i: any) => i.id === match.itemId);
+                if (sectionItem) {
+                  sectionItem.achieved = score === 2 ? 1 : (score === 1 ? 0.5 : 0);
+                  sectionItem.score = pointsEarned;
+                  sectionItem.evidence = match.evidence || match.reasoning;
+                  sectionItem.implicitCredit = match.implicitCredit || false;
                 }
               }
-              // Below 60 confidence = no credit
             }
-          } else {
-            console.log('Could not extract valid JSON from LLM response');
           }
         } else {
-          console.error('LLM API request failed:', response.status, await response.text());
+          const errorText = await response.text();
+          console.error('LLM API request failed:', response.status, errorText);
         }
       } catch (e) {
         console.error('LLM scoring error:', e);
-        // Continue with rule-based scoring only
       }
     }
 
-    // Calculate final scores
-    const totalPoints = llmScore;
+    // Calculate final scores with NCISM grade bands
     const percentage = maxScore > 0 ? Math.round((totalPoints / maxScore) * 100) : 0;
-    const passed = percentage >= 60;
+    
+    // NCISM Grade Bands
+    let grade: string;
+    let globalRating: string;
+    let gradeDescription: string;
+    
+    if (percentage >= 85) {
+      grade = "Distinction";
+      globalRating = "Excellent";
+      gradeDescription = "Exceeds expected competency for year level";
+    } else if (percentage >= 70) {
+      grade = "Pass (Competent)";
+      globalRating = "Competent";
+      gradeDescription = "Meets expected competency for year level";
+    } else if (percentage >= 60) {
+      grade = "Borderline";
+      globalRating = "Borderline";
+      gradeDescription = "Demonstrates potential but requires targeted practice before re-assessment";
+    } else {
+      grade = "Not Yet Competent";
+      globalRating = "NotReady";
+      gradeDescription = "Requires structured remediation program and faculty-supervised re-attempt";
+    }
 
-    // Generate missed checklist
+    const passed = percentage >= 70; // NCISM passing threshold
+
+    // Generate missed checklist with NCISM-aligned feedback
     const missedChecklist = sections.flatMap(section =>
       section.items
-        .filter((item: any) => item.achieved === 0)
+        .filter((item: any) => item.achieved === 0 && item.achieved !== "N/A")
         .map((item: any) => {
-          // Generate appropriate citation based on item content
           const citation = getCitationForTopic(item.text);
           return {
             id: item.id,
             text: item.text,
-            tip: item.tip || `Review the ${section.section} section`,
+            tip: item.tip || `Review the ${section.section} competency`,
             resource: citation,
+            ncismDomain: item.ncismDomain,
+            millerLevel: item.millerLevel,
           };
         })
     );
 
+    // Generate partial credit items (for student feedback)
+    const partialCreditItems = sections.flatMap(section =>
+      section.items
+        .filter((item: any) => item.achieved === 0.5)
+        .map((item: any) => ({
+          id: item.id,
+          text: item.text,
+          evidence: item.evidence,
+          tip: "Demonstrated understanding but needs more explicit verbalization",
+          implicitCredit: item.implicitCredit,
+        }))
+    );
+
     // Generate stepwise reasoning
     const reasoning = [
-      `1. Identify red flags: Review chief complaint and key symptoms`,
-      `2. Perform systematic examination: Nadi Pariksha and relevant physical exams`,
-      `3. Order targeted investigations: Only tests relevant to clinical presentation`,
-      `4. Formulate diagnosis: Based on Ayurvedic and modern diagnostic criteria`,
-      `5. Plan management: Immediate interventions and follow-up care`,
+      `1. Identify red flags: Review chief complaint and key presenting symptoms`,
+      `2. Systematic history: Apply SOCRATES approach for symptom characterization`,
+      `3. Ayurvedic assessment: Perform Nadi Pariksha and assess Agni, Koshtha, Prakriti`,
+      `4. Targeted investigations: Order only clinically indicated tests`,
+      `5. Formulate diagnosis: Integrate Ayurvedic and modern diagnostic criteria`,
+      `6. Plan management: Propose evidence-based Ayurvedic treatment with follow-up`,
     ];
 
     // Generate learning pearls with proper citations
     const pearls = [
       {
-        text: `Station score: ${percentage}% - ${passed ? 'Passed' : 'Needs improvement'}`,
-        ref: "Virtual OSCE Guidelines — Assessment Design Principles",
+        text: `Station result: ${percentage}% — ${grade}`,
+        ref: "NCISM CBME Assessment Guidelines",
       },
       {
-        text: "Order only relevant tests - unnecessary tests do not provide clinical value",
+        text: "Implicit clinical reasoning earns partial credit — verbalize your thinking for full marks",
+        ref: "OSCE Best Practices — Miller's Pyramid Assessment",
+      },
+      {
+        text: "Order only relevant tests — unnecessary investigations reduce Resource Stewardship score",
         ref: "Clinical Methods in Ayurveda — Diagnostic Reasoning",
-      },
-      {
-        text: "Systematic history-taking using SOCRATES improves diagnostic accuracy",
-        ref: "Clinical Methods in Ayurveda — History Taking in Ayurveda",
       },
     ];
 
@@ -370,22 +627,69 @@ Return ONLY valid JSON in this exact format:
       explanation: mcq.rationale,
     }));
 
-    // Final payload
+    // Domain-wise breakdown for debrief
+    const domainBreakdown: Record<NCISMDomain, { score: number; max: number }> = {
+      "History": { score: 0, max: 0 },
+      "Examination": { score: 0, max: 0 },
+      "Diagnosis": { score: 0, max: 0 },
+      "Management": { score: 0, max: 0 },
+      "Communication": { score: 0, max: 0 },
+      "Procedural": { score: 0, max: 0 },
+      "Resource Stewardship": { score: 0, max: 0 },
+    };
+
+    for (const section of sections) {
+      const domain = section.ncismDomain as NCISMDomain;
+      if (domainBreakdown[domain]) {
+        domainBreakdown[domain].score += section.score;
+        domainBreakdown[domain].max += section.max;
+      }
+    }
+
+    // Final payload with NCISM structure
     const result = {
+      // Core scores
       totalPoints: Math.round(totalPoints * 10) / 10,
       maxPoints: maxScore,
       percentage,
       passed,
+      grade,
+      globalRating,
+      gradeDescription,
+      
+      // Section breakdown
       sections,
+      
+      // NCISM domain breakdown
+      domainBreakdown,
+      
+      // Feedback items
       missedItems: missedChecklist,
+      partialCreditItems,
+      
+      // Learning support
       reasoning,
       pearls,
       mcqs,
+      
+      // Audit trail
       llmMatches,
+      scoringVersion: "NCISM-3Level-v1",
       modelOutputId: `score-${run_id}-${Date.now()}`,
+      
+      // Case metadata
+      isChildCase,
+      passingThreshold: 70,
     };
 
-    console.log('Scoring complete:', { totalPoints, maxScore, percentage });
+    console.log('NCISM Scoring complete:', { 
+      totalPoints, 
+      maxScore, 
+      percentage, 
+      grade,
+      globalRating,
+      implicitCreditCount: partialCreditItems.length 
+    });
 
     return new Response(
       JSON.stringify(result),
@@ -403,11 +707,15 @@ Return ONLY valid JSON in this exact format:
         maxPoints: 0,
         percentage: 0,
         passed: false,
+        grade: "Error",
+        globalRating: "NotReady",
         sections: [],
         missedItems: [],
+        partialCreditItems: [],
         reasoning: [],
         pearls: [],
         mcqs: [],
+        scoringVersion: "NCISM-3Level-v1",
       }),
       {
         status: 500,

@@ -8,6 +8,8 @@
   "millerLevel": "ShowsHow",
   "bloomDomain": "Cognitive/Affective",
   "durationMinutes": 12,
+  "targetYear": "3rd Year",
+  "passingCriteria": 70,
   "patient": {
     "name": "Smt. Meera",
     "age": 34,
@@ -35,13 +37,17 @@
       "pulse": "Rapid, thin (Nadi: Pittaja - 110 bpm)",
       "skin": "Warm to touch, slightly flushed",
       "abdomen": "Soft, mild tenderness in epigastric region",
-      "throat": "Mildly congested, no exudates"
+      "throat": "Mildly congested, no exudates",
+      "cardiovascular": "S1 S2 normal, no murmurs - Normal cardiovascular examination",
+      "neurological": "Alert and oriented, cranial nerves intact - Normal neurological examination"
     },
     "labsOnOrder": {
       "CBC": "WBC 14,000 (elevated), Neutrophils 75%, Hb 12.8, Platelet 250,000",
       "LFT": "Mildly elevated bilirubin (1.8 mg/dL), ALT 45 U/L (slightly raised)",
       "Urine_routine": "Yellow colored, specific gravity 1.025, trace protein",
-      "Malaria_rapid": "Negative"
+      "Malaria_rapid": "Negative",
+      "Blood_glucose": "95 mg/dL (Normal: 70-100 mg/dL) - Normal",
+      "Thyroid_profile": "TSH 2.1 mIU/L (Normal: 0.4-4.0 mIU/L) - Normal"
     },
     "dynamicTriggers": {
       "check_nadi": ["onRequestExam.pulse"],
@@ -51,88 +57,204 @@
   },
   "rubric": [
     {
-      "section": "History Taking",
-      "max": 3,
+      "section": "History Taking (Rogi Pariksha - Prashna)",
+      "max": 6,
+      "ncismDomain": "History",
+      "millerLevel": "ShowsHow",
+      "ncismCompetencyCode": "KC.UG.4.1",
       "items": [
         {
           "id": "H1",
           "text": "Elicit onset, duration, and character of fever (SOCRATES approach)",
-          "weight": 1,
+          "maxMarks": 2,
+          "millerLevel": "ShowsHow",
+          "ncismDomain": "History",
+          "ncismCompetencyCode": "KC.UG.4.1",
+          "scoringCriteria": {
+            "score0": "Did not ask about fever characteristics",
+            "score1": "Asked generally about fever but missed specific characterization (onset/duration/pattern)",
+            "score2": "Systematically elicited onset, duration, pattern, and character using SOCRATES approach"
+          },
+          "implicitReasoningCues": ["when started", "how long", "describe fever", "temperature pattern", "onset"],
+          "examinerNotes": "Look for systematic questioning about fever timeline and quality",
           "competencyIds": ["NCISM-KAY-CLIN-001"],
           "sloIds": ["SLO-KAY-JW-01"]
         },
         {
           "id": "H2",
           "text": "Ask about fluid intake, thirst, and signs of dehydration",
-          "weight": 1,
+          "maxMarks": 2,
+          "millerLevel": "ShowsHow",
+          "ncismDomain": "History",
+          "scoringCriteria": {
+            "score0": "Did not inquire about hydration status",
+            "score1": "Asked about thirst OR fluid intake, but not comprehensively",
+            "score2": "Systematically assessed thirst, fluid intake, and dehydration signs"
+          },
+          "implicitReasoningCues": ["thirsty", "drinking", "water", "dry mouth", "urine output"],
           "sloIds": ["SLO-KAY-JW-01"]
         },
         {
           "id": "H3",
           "text": "Inquire about aggravating/relieving factors and Pittaja symptoms",
-          "weight": 1,
+          "maxMarks": 2,
+          "millerLevel": "ShowsHow",
+          "ncismDomain": "History",
+          "scoringCriteria": {
+            "score0": "Did not explore aggravating or relieving factors",
+            "score1": "Asked about one factor OR identified Pitta symptoms implicitly",
+            "score2": "Explicitly explored aggravating/relieving factors with Pitta dosha correlation"
+          },
+          "implicitReasoningCues": ["worse when", "better after", "hot", "cold", "burning", "irritable"],
           "sloIds": ["SLO-KAY-JW-01"]
         }
       ]
     },
     {
-      "section": "Examination/Investigation",
-      "max": 3,
+      "section": "Examination/Investigation (Sparsha Pariksha)",
+      "max": 6,
+      "ncismDomain": "Examination",
+      "millerLevel": "ShowsHow",
+      "ncismCompetencyCode": "KC.UG.4.2",
       "items": [
         {
           "id": "E1",
           "text": "Perform Nadi Pariksha and recognize Pittaja pulse characteristics",
-          "weight": 1,
+          "maxMarks": 2,
+          "millerLevel": "ShowsHow",
+          "ncismDomain": "Examination",
+          "ncismCompetencyCode": "KC.UG.4.2",
+          "scoringCriteria": {
+            "score0": "Did not perform pulse examination",
+            "score1": "Performed Nadi Pariksha but did not interpret Pittaja characteristics",
+            "score2": "Performed and verbalized Pittaja Nadi characteristics (rapid, thin, kaka gati)"
+          },
+          "implicitReasoningCues": ["pulse", "nadi", "rate", "character", "fast", "thin"],
+          "examinerNotes": "Pittaja Nadi: Kaka gati (crow-like), rapid and thin",
           "competencyIds": ["NCISM-KAY-EXM-002"]
         },
         {
           "id": "E2",
           "text": "Assess for Pittaja signs (tongue coating, skin warmth, thirst)",
-          "weight": 1,
+          "maxMarks": 2,
+          "millerLevel": "ShowsHow",
+          "ncismDomain": "Examination",
+          "scoringCriteria": {
+            "score0": "Did not examine for Pittaja physical signs",
+            "score1": "Examined one Pittaja sign (tongue OR skin OR thirst)",
+            "score2": "Systematically assessed multiple Pittaja signs with correct interpretation"
+          },
+          "implicitReasoningCues": ["tongue", "coating", "skin", "warm", "flush", "thirst"],
           "sloIds": ["SLO-KAY-JW-01"]
         },
         {
           "id": "E3",
           "text": "Order relevant investigations (CBC, LFT, malaria screen)",
-          "weight": 1,
+          "maxMarks": 2,
+          "millerLevel": "ShowsHow",
+          "ncismDomain": "Examination",
+          "scoringCriteria": {
+            "score0": "Did not order appropriate investigations",
+            "score1": "Ordered some relevant tests but missed key investigations",
+            "score2": "Ordered targeted, relevant investigations based on clinical presentation"
+          },
+          "implicitReasoningCues": ["blood test", "CBC", "liver", "malaria", "urine"],
           "competencyIds": ["NCISM-KAY-CLIN-001"]
         }
       ]
     },
     {
-      "section": "Diagnosis",
-      "max": 2,
+      "section": "Diagnosis (Nidana)",
+      "max": 4,
+      "ncismDomain": "Diagnosis",
+      "millerLevel": "KnowsHow",
+      "ncismCompetencyCode": "KC.UG.4.3",
       "items": [
         {
           "id": "D1",
-          "text": "State provisional diagnosis: Pittaja Jwara/Agitapati",
-          "weight": 2,
+          "text": "State provisional diagnosis: Pittaja Jwara with correct dosha identification",
+          "maxMarks": 4,
+          "millerLevel": "KnowsHow",
+          "ncismDomain": "Diagnosis",
+          "ncismCompetencyCode": "KC.UG.4.3",
+          "scoringCriteria": {
+            "score0": "Incorrect diagnosis or no diagnosis stated",
+            "score1": "Partially correct (identified fever but missed Pittaja component OR vice versa)",
+            "score2": "Complete diagnosis: Pittaja Jwara with correct dosha identification and reasoning"
+          },
+          "implicitReasoningCues": ["pitta", "jwara", "fever", "heat", "burning", "dosha"],
+          "examinerNotes": "Accept 'Pittaja Jwara', 'Pitta-predominant fever', or equivalent with correct reasoning",
           "competencyIds": ["NCISM-KAY-CLIN-001"],
           "sloIds": ["SLO-KAY-JW-01"]
         }
       ]
     },
     {
-      "section": "Management",
-      "max": 1,
+      "section": "Management (Chikitsa)",
+      "max": 2,
+      "ncismDomain": "Management",
+      "millerLevel": "ShowsHow",
+      "ncismCompetencyCode": "KC.UG.4.4",
       "items": [
         {
           "id": "M1",
           "text": "Initiate cooling measures, ORS, consider antipyretics and referral if severe",
-          "weight": 1,
+          "maxMarks": 2,
+          "millerLevel": "ShowsHow",
+          "ncismDomain": "Management",
+          "scoringCriteria": {
+            "score0": "No appropriate management plan proposed",
+            "score1": "Partial management (cooling OR hydration, but not comprehensive)",
+            "score2": "Comprehensive management: cooling, hydration, and appropriate escalation pathway"
+          },
+          "implicitReasoningCues": ["cooling", "cold", "ORS", "fluids", "rest", "monitor"],
           "competencyIds": ["NCISM-KAY-CLIN-001"]
         }
       ]
     },
     {
-      "section": "Communication",
-      "max": 1,
+      "section": "Communication (Samvada)",
+      "max": 2,
+      "ncismDomain": "Communication",
+      "millerLevel": "ShowsHow",
+      "ncismCompetencyCode": "KC.UG.4.5",
       "items": [
         {
           "id": "C1",
           "text": "Explain diagnosis and management plan clearly; provide reassurance",
-          "weight": 1,
+          "maxMarks": 2,
+          "millerLevel": "ShowsHow",
+          "ncismDomain": "Communication",
+          "scoringCriteria": {
+            "score0": "Did not explain diagnosis or plan to patient",
+            "score1": "Explained partially (diagnosis OR plan, but not both with reassurance)",
+            "score2": "Clear explanation of diagnosis and plan with appropriate reassurance"
+          },
+          "implicitReasoningCues": ["explain", "tell", "reassure", "worry", "better", "recover"],
           "sloIds": ["SLO-KAY-JW-01"]
+        }
+      ]
+    },
+    {
+      "section": "Clinical Resource Stewardship",
+      "max": 2,
+      "ncismDomain": "Resource Stewardship",
+      "millerLevel": "Does",
+      "ncismCompetencyCode": "KC.UG.4.6",
+      "items": [
+        {
+          "id": "RS1",
+          "text": "Ordered only relevant investigations (avoided unnecessary tests)",
+          "maxMarks": 2,
+          "millerLevel": "Does",
+          "ncismDomain": "Resource Stewardship",
+          "scoringCriteria": {
+            "score0": "Ordered multiple unnecessary tests (shotgun approach) - e.g., Thyroid/Glucose for fever case",
+            "score1": "Ordered mostly relevant tests but included 1 unnecessary test",
+            "score2": "Ordered only targeted, clinically indicated investigations (CBC, LFT, Malaria, Urine)"
+          },
+          "implicitReasoningCues": ["relevant", "necessary", "targeted", "indicated"],
+          "examinerNotes": "Unnecessary tests for this case: Thyroid profile, Blood glucose, Lipid profile. Relevant tests: CBC, LFT, Urine routine, Malaria screen"
         }
       ]
     }
@@ -176,6 +298,62 @@
       "correctIndex": 1,
       "rationale": "Pittaja conditions require cooling therapies. ORS with cooling herbs like Usheera (Vetiver) helps reduce Pitta and prevent dehydration. Heat-inducing measures would aggravate Pitta.",
       "sloId": "SLO-KAY-JW-01"
+    }
+  ],
+  "diagnosisOptions": [
+    {
+      "id": "D1",
+      "text": "Pittaja Jwara - Pitta dominant fever with heat and thirst",
+      "hint": "Based on high fever, intense thirst, irritability, and Pittaja pulse",
+      "isCorrect": true,
+      "sloIds": ["SLO-KAY-JW-01"]
+    },
+    {
+      "id": "D2",
+      "text": "Kaphaja Jwara - Kapha dominant fever",
+      "hint": "Would present with heaviness, congestion, and sluggish pulse",
+      "isCorrect": false,
+      "sloIds": ["SLO-KAY-JW-01"]
+    },
+    {
+      "id": "D3",
+      "text": "Vataja Jwara - Vata dominant fever",
+      "hint": "Would present with irregular fever pattern and anxiety",
+      "isCorrect": false,
+      "sloIds": ["SLO-KAY-JW-01"]
+    },
+    {
+      "id": "D4",
+      "text": "Other (enter diagnosis below)",
+      "hint": "Free-text diagnosis if none above fit",
+      "isCorrect": false
+    }
+  ],
+  "managementOptions": [
+    {
+      "id": "M1",
+      "text": "Cooling measures, ORS with Usheera, rest, and monitor for improvement",
+      "hint": "Addresses Pitta aggravation with appropriate cooling therapy",
+      "isCorrect": true,
+      "sloIds": ["SLO-KAY-JW-01"]
+    },
+    {
+      "id": "M2",
+      "text": "Immediate IV antibiotics and hospitalization",
+      "hint": "Aggressive approach not indicated for uncomplicated Pittaja Jwara",
+      "isCorrect": false
+    },
+    {
+      "id": "M3",
+      "text": "Hot oil massage and steam therapy (Swedana)",
+      "hint": "Would aggravate Pitta - contraindicated in Pittaja conditions",
+      "isCorrect": false
+    },
+    {
+      "id": "M4",
+      "text": "Other (enter plan below)",
+      "hint": "Free-text plan if none above fit",
+      "isCorrect": false
     }
   ],
   "metadata": {
